@@ -93,6 +93,23 @@ Implement the response contract from [`internal/action/types.go`](internal/actio
 2. **Workflow rehearsal** – use [`examples/review.yml`](examples/review.yml) with [`act`](https://github.com/nektos/act) or a throwaway repo. Set `tool_mode: mock` so no external calls are made.
 3. **End-to-end in GitHub** – push a branch with the action, open a PR, and mention the trigger phrase (`@agent` by default). Check the PR timeline, review tab, and job summary for the mock output.
 
+## Automation & CI
+
+### Makefile targets
+
+- `make test` – runs `go test ./...` (mirrors the CI job) and is the default way to exercise the suite locally.
+- `make lint` / `make lintmax` – invoke [`golangci-lint`](.golangci.yml) with the repo's settings; use `lintmax` when you need a larger duplicate issue budget.
+- `make build` – compiles all packages to ensure the action container still builds cleanly.
+- `make gosec` / `make govulncheck` – optional security sweeps you can trigger before larger releases.
+- `make tag-{major,minor,patch}` – call [`svu`](https://github.com/caarlos0/svu) to propose the next semantic version. Install it once with `go install github.com/caarlos0/svu/cmd/svu@latest`.
+- `make docker-lint` – runs the lint suite inside the official Docker image, which matches the GitHub Action.
+
+### GitHub Actions workflow
+
+- `.github/workflows/ci.yml` runs on pushes to `main` and every pull request. The `golangci-lint` job uses `golangci/golangci-lint-action@v8` against this repo's config, and the `go test` job executes `make test` with the same Go version declared in `go.mod` (1.22).
+- Tags pushed with the `svu` helpers automatically benefit from fetching the full tag history in CI, so the workflow keeps `fetch-depth: 0` to make those commands consistent locally and in automation.
+- Security coverage comes from `codeql-analysis`, `dependency-scanning`, and `secret-scanning` workflows. They run weekly plus on every PR/push to `main`, covering CodeQL, Go vuln checks (`govulncheck`, Nancy, gosec), GitHub dependency review, and TruffleHog secret scanning.
+
 ## Publishing Checklist
 
 1. Build the action container: `docker build -t agent-action .`

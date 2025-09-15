@@ -1,0 +1,29 @@
+---
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - exhaustive
+    - nonamedreturns
+    - predeclared
+
+linters-settings:
+  errcheck:
+    exclude-functions:
+      - (io.Closer).Close
+      - fmt.Fprintf
+      - fmt.Fprintln
+
+formatters:
+  enable:
+    - gofmt
