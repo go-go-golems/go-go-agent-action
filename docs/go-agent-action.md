@@ -100,6 +100,39 @@ GOCACHE=$(pwd)/.cache go test ./...
 
     The real run pulls the image, builds the action container, and executes the mock review, producing the summary and review artifacts described above.
 
+## Tutorial: Build Your Own Reviewing Action
+
+This tutorial walks through cloning the action skeleton, wiring your own reviewer, and releasing it for other repositories. The steps assume you are comfortable with Git, Go, and Docker-based GitHub Actions.
+
+1. **Fork or copy the template** – Clone `go-go-golems/go-go-agent-action`, then rename the module in `go.mod` and the import in `cmd/agent-action/main.go` to match your GitHub repository path.
+2. **Replace the review brain** – Implement an HTTP service or CLI that accepts the `PRContext` JSON. Swap `tool_mode` defaults in `internal/action/config.go` or change `buildTool` in `cmd/agent-action/main.go` to point at your service.
+3. **Extend context if needed** – Add fields to `internal/action/types.go` and populate them in `internal/action/context.go` (for example, include CI results or commit history) before sending the payload to your reviewer.
+4. **Run tests** – Execute `GOCACHE=$(pwd)/.cache go test ./...` and use `act` to simulate a workflow run.
+5. **Publish the action** – Push the repository, tag a release (for example `v1.0.0`), and verify `action.yml` references `Dockerfile` at the repository root.
+
+Once the action is public, consumers can reference `uses: your-org/your-review-action@v1` exactly like the examples below.
+
+## Integrate the Action into a Repository
+
+Adding automated reviews to another project follows the same pattern the `go-go-labs` repository uses.
+
+- **Always-on reviews** – Create `.github/workflows/go-agent-review.yml` that triggers on `pull_request` events, sets `pull-requests: write` permissions, runs `actions/checkout`, and invokes the action with `tool_mode` of your choice.
+- **On-demand mentions** – Add a second workflow listening to `issue_comment` events with a guard such as `contains(github.event.comment.body, '@agent')`. This keeps noise low while letting developers request a review when they are ready.
+- **Token management** – Pass `github_token: ${{ secrets.GITHUB_TOKEN }}` (or a PAT) so the action can post reviews. Without it, the GitHub API responds with 401 errors when creating comments.
+
+Test both workflows by opening a PR and leaving a comment that contains the trigger phrase. The mock reviewer responds instantly, giving you confidence before pointing the action at a real LLM backend.
+
+## Customising go-go-agent-action
+
+The starter is intentionally modular so you can extend it without rewriting everything.
+
+- **New triggers** – Update `internal/action/triggers.go` to check additional signals (for example, branch name patterns or files touched). When triggers become complex, consider exposing new inputs in `action.yml` and plumbing them through `internal/action/config.go`.
+- **Alternate outputs** – Modify `internal/action/publisher.go` to write to other destinations. You can add support for Checks API summaries, Slack webhooks, or custom artifacts alongside the pull-request review.
+- **Different packaging** – If Docker is not desirable, port `cmd/agent-action/main.go` into a composite or JavaScript action, reusing the Go packages for context collection by calling them through `go run`.
+- **Enhanced tooling** – Implement additional tools in `internal/action/tool.go`, such as a gRPC client or a multi-agent coordinator that fans out to several services before aggregating comments.
+
+Whenever you customise the action, document new inputs in `action.yml`, update `README.md`, and add regression tests or fixtures so `act` runs continue to succeed.
+
 ## GitHub Integration
 
 The action slots into standard PR workflows. Include `actions/checkout` with `persist-credentials: false`, then invoke the action. With the mock tool you can iterate safely; switching to `tool_mode: http` or `cmd` later keeps the surrounding workflow identical.
