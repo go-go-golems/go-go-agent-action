@@ -1,7 +1,7 @@
 ---
-Title: Building and Integrating a Custom Go Review Action
+Title: Integrating Your Custom Reviewer with the Go Agent Action
 Slug: build-custom-agent-action
-Short: Step-by-step guide for cloning the Go agent review template, wiring your own reviewer, and integrating it into GitHub workflows.
+Short: How to wire your own review tool into the published Go agent action and deploy it in GitHub workflows.
 Topics:
 - github-actions
 - code-review
@@ -12,38 +12,26 @@ ShowPerDefault: true
 SectionType: GeneralTopic
 ---
 
-# Building and Integrating a Custom Go Review Action
+# Integrating Your Custom Reviewer with the Go Agent Action
 
-This tutorial walks you through cloning the Go agent action template, replacing the mock reviewer with your own binary or service, and deploying the action in GitHub workflows. Follow the steps to tailor automated pull-request reviews to your organisation.
+This guide focuses on using the published `go-go-golems/go-go-agent-action` without modifying its source. You will learn how to build a reviewer binary or service, pass it to the action via `tool_mode`, and run the action from a GitHub workflow that supports both pull-request events and `@agent` mentions.
 
 ## Prerequisites
 
-You should be comfortable with Go modules, Docker container actions, and Git/GitHub basics. Install Go 1.22 or newer and Docker Desktop (or an equivalent engine) locally so you can run unit tests and container builds.
+- Go 1.22+ (or another language for your reviewer) if you plan to build a CLI.
+- Familiarity with JSON input/output and simple GitHub workflow edits.
+- Optional: Docker if you want to rehearse the workflow locally with `act`.
 
-## Step 1 – Clone the template action
+## Step 1 – Implement your reviewer
 
-Start from the published repository and rename the module to match your GitHub namespace.
+The action sends a `PRContext` JSON and expects a `ReviewResult` JSON. You can respond in two ways:
 
-```bash
-# Fork or copy the template
-git clone git@github.com:go-go-golems/go-go-agent-action.git my-agent-action
-cd my-agent-action
+### Option A: HTTP reviewer
 
-# Update the module path and imports
-perl -pi -e 's#github.com/go-go-golems/go-go-agent-action#github.com/your-org/my-agent-action#g' go.mod cmd/agent-action/main.go
-```
-
-Run `GOCACHE=$(pwd)/.cache go test ./...` to ensure the renamed module still builds. This catches typos before you add custom code.
-
-## Step 2 – Implement your reviewer
-
-The action expects a `ReviewResult` JSON from either `tool_mode=http` or `tool_mode=cmd`. Choose the mode that best matches your backend.
-
-### Option A: HTTP service
-
-If you already have a service that generates review feedback, expose a POST endpoint that accepts `PRContext` JSON and emits `ReviewResult`. Configure the action with:
+Expose a POST endpoint that accepts the context and returns review feedback.
 
 ```yaml
+# Workflow snippet
 with:
   tool_mode: http
   tool_url: https://reviewer.internal/api/review
@@ -52,49 +40,56 @@ with:
   output_mode: review+summary
 ```
 
+Your service can run anywhere, as long as the GitHub runner can reach it.
+
 ### Option B: CLI reviewer
 
-To ship a binary inside the action image, add a new package (for example `cmd/custom-reviewer`) that reads stdin and writes `ReviewResult` to stdout. Wire it in `cmd/agent-action/main.go` so `tool_mode: custom` selects your binary:
+Build an executable that reads `PRContext` from stdin and prints a `ReviewResult` JSON to stdout. Place the source in the repository under review, for example `cmd/reviewers/custom/main.go`:
 
 ```go
-case "custom":
-    return &action.CommandTool{Command: "/usr/local/bin/custom-reviewer"}, nil
+package main
+
+import (
+    "encoding/json"
+    "os"
+)
+
+type prContext struct {
+    Number int `json:"number"`
+}
+
+type result struct {
+    SummaryMarkdown string `json:"summary_markdown"`
+    ReviewDecision  string `json:"review_decision"`
+    ReviewBody      string `json:"review_body"`
+    IssueComment    string `json:"issue_comment"`
+}
+
+func main() {
+    var ctx prContext
+    if err := json.NewDecoder(os.Stdin).Decode(&ctx); err != nil {
+        panic(err)
+    }
+
+    body := "Automated feedback for PR #" + strconv.Itoa(ctx.Number)
+    res := result{
+        SummaryMarkdown: "### Custom review\n- PR #" + strconv.Itoa(ctx.Number),
+        ReviewDecision:  "comment",
+        ReviewBody:      body,
+        IssueComment:    body,
+    }
+
+    if err := json.NewEncoder(os.Stdout).Encode(res); err != nil {
+        panic(err)
+    }
+}
 ```
 
-Update `Dockerfile` to build and copy the binary into the runtime image. Run `act` to confirm the container invokes your reviewer correctly.
+The binary can run on any language/runtime; just honour stdin/stdout JSON.
 
-## Step 3 – Configure inputs and triggers
+## Step 2 – Create the workflow glue
 
-Expose any new knobs in `action.yml`. For example, add `reviewer_config_path` if the reviewer needs a YAML file. Update `internal/action/config.go` to parse the input, and load the file before calling the reviewer. Common patterns include:
-
-- Extending `internal/action/context.go` to add extra metadata (e.g. test results).
-- Adjusting `internal/action/triggers.go` to support labels, branches, or comment phrases.
-- Adding new `output_mode` combinations in `internal/action/publisher.go` if you want to post to external services.
-
-Document the new inputs in the README so downstream consumers know how to configure them.
-
-## Step 4 – Test locally
-
-Use unit tests and `act` to exercise both pull-request and mention triggers.
-
-```bash
-GOCACHE=$(pwd)/.cache go test ./...
-~/go/bin/act -W examples/review.yml -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
-```
-
-Populate `examples/review.yml` with the workflow you expect downstream teams to use. Include `github_token: ${{ secrets.GITHUB_TOKEN }}` so the review can post comments during local simulation.
-
-## Step 5 – Publish the action
-
-1. Commit your changes and push to GitHub.
-2. Tag a release (`git tag v1.0.0 && git push origin v1.0.0`).
-3. Confirm the tag appears under **Releases** and `action.yml` references the local Dockerfile.
-
-Downstream workflows can now reference `uses: your-org/my-agent-action@v1.0.0`.
-
-## Step 6 – Integrate in a repository
-
-Create a workflow similar to the one `go-go-labs` uses after the merger of PR and mention triggers.
+Add a workflow that builds your reviewer (if using CLI) and invokes the action. The merged workflow pattern below triggers on both pull-request events and comment mentions.
 
 ```yaml
 name: go-agent-review
@@ -113,7 +108,9 @@ jobs:
   review:
     if: |
       github.event_name == 'pull_request' ||
-      (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '@agent'))
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, '@agent'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -123,10 +120,10 @@ jobs:
       - name: Build reviewer
         run: |
           mkdir -p .tooling
-          go build -o .tooling/custom-reviewer ./cmd/reviewers/custom-reviewer
+          go build -o .tooling/custom-reviewer ./cmd/reviewers/custom
 
       - name: Automated review
-        uses: your-org/my-agent-action@v1.0.0
+        uses: go-go-golems/go-go-agent-action@v1.0.0
         with:
           tool_mode: cmd
           tool_cmd: ./.tooling/custom-reviewer
@@ -135,22 +132,48 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-Developers receive automated reviews every time they update a PR or explicitly call the reviewer with `@agent`. Because the reviewer binary lives in the repository under test, you can evolve scripts and configuration alongside the application code.
+For HTTP reviewers, drop the build step and set `tool_mode: http` with the appropriate URL/token.
 
-## Step 7 – Extend and iterate
+## Step 3 – Pass configuration to the reviewer
 
-As your review needs grow, consider:
+You control configuration entirely in your repository and workflow:
 
-- Allowing reviewers to run optional suites by passing structured commands through the action inputs.
-- Aggregating results from multiple tools (lint, security scan, QA scripts) before posting a single set of comments.
-- Publishing a Checks API summary or custom artifacts from `internal/action/publisher.go` for richer CI dashboards.
+- Check in YAML/JSON config files and let the reviewer load them from the workspace.
+- Use workflow inputs or environment variables to pass options (e.g., `export REVIEW_COMMANDS='go test ./...,golangci-lint run'`).
+- Store secrets (API keys, tokens) in repository secrets and expose them via `env:`.
 
-Each enhancement should come with updated documentation, examples, and ideally automated tests that you can run with `act` or unit suites.
+Because the action only forwards context and posts results, the reviewer has full freedom to run tests, call APIs, or aggregate data before returning `ReviewResult`.
 
-## Troubleshooting tips
+## Step 4 – Test locally (optional)
 
-- **401 errors when creating reviews** – Ensure `github_token` (or a PAT) is passed in workflow inputs. The default `mock` mode cannot post without it.
-- **422 “diff hunk” errors** – Avoid inline comments when running from `issue_comment` events unless your reviewer knows the diff context. Use issue comments or fall back to the pull-request trigger.
-- **Docker build failures** – If BuildKit flags cache mounts, remove the `RUN --mount` directives from the Dockerfile, or enable BuildKit explicitly.
+Use `go test` (or your language’s test suite) to check the reviewer, then dry-run the workflow with `act`:
 
-With these steps you can deliver a tailored review experience while reusing the Go agent action’s proven GitHub integration.
+```bash
+GOCACHE=$(pwd)/.cache go test ./cmd/reviewers/custom
+~/go/bin/act -W .github/workflows/go-agent-review.yml -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
+```
+
+Provide event fixtures (`.github/events/pull_request.json`, `.github/events/issue_comment.json`) to simulate PR updates and `@agent` comments.
+
+## Step 5 – Commit and merge
+
+- Commit the reviewer source, any config files, and the workflow.
+- Open a pull request so the workflow lands on `main`. GitHub only recognises workflow changes from the default branch.
+- Once merged, every PR update runs the reviewer automatically; anyone can comment `@agent` to trigger it on demand without additional code changes.
+
+## Step 6 – Reuse across repositories (optional)
+
+If multiple repositories should share the same reviewer logic:
+
+- Package the reviewer as a Go module (or npm package, etc.) and `go install`/`npm install` it inside the workflow.
+- Publish the reviewer as a Docker image, build/push once, and `docker run` it via `tool_mode=cmd`.
+
+You still reference `go-go-golems/go-go-agent-action@v1.0.0`; only the reviewer artefact changes.
+
+## Troubleshooting
+
+- **401 errors** – Ensure `github_token` (or a PAT) is passed to the action so it can post reviews.
+- **422 diff errors** – When triggered via `issue_comment`, avoid inline comments unless your reviewer knows the diff lines. Use summary/issue comments instead.
+- **Reviewer crashes** – The action surfaces stdout/stderr in the job log. Add logging in your reviewer to troubleshoot command execution.
+
+By keeping reviewer logic in your repository and reusing the published action, you get a flexible review workflow with minimal maintenance overhead.
