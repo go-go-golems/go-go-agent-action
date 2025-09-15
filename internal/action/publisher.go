@@ -93,7 +93,7 @@ func (p *Publisher) publishReview(ctx context.Context, pr *PRContext, result *Re
 		return nil
 	}
 
-	event := "COMMENT"
+	var event string
 	switch strings.ToUpper(result.ReviewDecision) {
 	case "APPROVE":
 		event = "APPROVE"

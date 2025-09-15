@@ -16,13 +16,12 @@ linters:
     - exhaustive
     - nonamedreturns
     - predeclared
-
-linters-settings:
-  errcheck:
-    exclude-functions:
-      - (io.Closer).Close
-      - fmt.Fprintf
-      - fmt.Fprintln
+  settings:
+    errcheck:
+      exclude-functions:
+        - (io.Closer).Close
+        - fmt.Fprintf
+        - fmt.Fprintln
 
 formatters:
   enable:
