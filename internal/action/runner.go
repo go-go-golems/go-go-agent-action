@@ -6,8 +6,6 @@ import (
 	"io"
 	"os"
 	"strings"
-
-	"github.com/go-go-golems/go-go-agent-action/internal/action/templating"
 )
 
 type githubService interface {
@@ -58,7 +56,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 
 	if r.Inputs.PromptTemplatePath != "" {
-		prompt, meta, err := templating.RenderPrompt(r.Inputs, r.Env, prc, r.FileLoader)
+		prompt, meta, err := RenderPrompt(r.Inputs, r.Env, prc, r.FileLoader)
 		if err != nil {
 			return err
 		}

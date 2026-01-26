@@ -1,4 +1,4 @@
-package templating
+package action
 
 import (
 	"encoding/base64"
@@ -7,8 +7,6 @@ import (
 	"strings"
 	"text/template"
 	"time"
-
-	"github.com/go-go-golems/go-go-agent-action/internal/action"
 )
 
 type TemplateFile struct {
@@ -17,7 +15,7 @@ type TemplateFile struct {
 }
 
 type TemplateData struct {
-	PR           *action.PRContext
+	PR           *PRContext
 	Guidelines   string
 	ExtraFiles   []TemplateFile
 	ExtraFileMap map[string]string
@@ -25,7 +23,7 @@ type TemplateData struct {
 }
 
 // RenderPrompt loads and renders the prompt template when configured.
-func RenderPrompt(in *action.Inputs, env action.RuntimeEnv, pr *action.PRContext, readFile action.FileLoader) (string, *action.PromptMeta, error) {
+func RenderPrompt(in *Inputs, env RuntimeEnv, pr *PRContext, readFile FileLoader) (string, *PromptMeta, error) {
 	if in == nil || in.PromptTemplatePath == "" {
 		return "", nil, nil
 	}
@@ -87,7 +85,7 @@ func RenderPrompt(in *action.Inputs, env action.RuntimeEnv, pr *action.PRContext
 		return "", nil, fmt.Errorf("render prompt template: %w", err)
 	}
 
-	meta := &action.PromptMeta{
+	meta := &PromptMeta{
 		TemplatePath: in.PromptTemplatePath,
 		Engine:       engine,
 		RenderedAt:   time.Now().UTC().Format(time.RFC3339Nano),
@@ -95,7 +93,7 @@ func RenderPrompt(in *action.Inputs, env action.RuntimeEnv, pr *action.PRContext
 	return out.String(), meta, nil
 }
 
-func readWorkspaceFile(workspace, rel string, limit int, readFile action.FileLoader) (string, error) {
+func readWorkspaceFile(workspace, rel string, limit int, readFile FileLoader) (string, error) {
 	path := filepath.Join(workspace, rel)
 	data, err := readFile(path)
 	if err != nil {
