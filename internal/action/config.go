@@ -14,6 +14,7 @@ type Inputs struct {
 	TriggerPhrase          string
 	LabelTrigger           string
 	AssigneeTrigger        string
+	PRNumberOverride       int
 	GuidelinesPath         string
 	IncludePatch           bool
 	IncludeFileContent     bool
@@ -58,6 +59,7 @@ func ParseInputs(args []string, lookup func(string) string) (*Inputs, error) {
 	fs.StringVar(&in.TriggerPhrase, "trigger_phrase", envOrDefault(lookup, "INPUT_TRIGGER_PHRASE", "@agent"), "")
 	fs.StringVar(&in.LabelTrigger, "label_trigger", lookup("INPUT_LABEL_TRIGGER"), "")
 	fs.StringVar(&in.AssigneeTrigger, "assignee_trigger", lookup("INPUT_ASSIGNEE_TRIGGER"), "")
+	fs.IntVar(&in.PRNumberOverride, "pr_number", envInt(lookup, "INPUT_PR_NUMBER", 0), "")
 
 	fs.StringVar(&in.GuidelinesPath, "guidelines_path", envOrDefault(lookup, "INPUT_GUIDELINES_PATH", "CLAUDE.md"), "")
 	fs.BoolVar(&in.IncludePatch, "include_patch", envBool(lookup, "INPUT_INCLUDE_PATCH", true), "")

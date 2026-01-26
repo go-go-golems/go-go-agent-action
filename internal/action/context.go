@@ -32,7 +32,7 @@ func CollectPRContext(ctx context.Context, gh PullRequestClient, in *Inputs, env
 		return nil, fmt.Errorf("invalid repository value %q", env.Repository)
 	}
 
-	number, triggerText, err := determinePRNumber(env, readFile)
+	number, triggerText, err := determinePRNumber(in, env, readFile)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,10 @@ func CollectPRContext(ctx context.Context, gh PullRequestClient, in *Inputs, env
 	}, nil
 }
 
-func determinePRNumber(env RuntimeEnv, readFile FileLoader) (int, string, error) {
+func determinePRNumber(in *Inputs, env RuntimeEnv, readFile FileLoader) (int, string, error) {
+	if in != nil && in.PRNumberOverride > 0 {
+		return in.PRNumberOverride, "", nil
+	}
 	var payload struct {
 		Action string `json:"action"`
 		Issue  *struct {

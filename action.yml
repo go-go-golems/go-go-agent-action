@@ -17,6 +17,10 @@ inputs:
     description: "Optional assignee username that triggers the action"
     required: false
     default: ""
+  pr_number:
+    description: "Manual PR number override (useful for workflow_dispatch)"
+    required: false
+    default: ""
   guidelines_path:
     description: "Path to a repo file with review guidelines (compatible with CLAUDE.md)"
     required: false
@@ -120,6 +124,8 @@ runs:
     - "${{ inputs.label_trigger }}"
     - "--assignee_trigger"
     - "${{ inputs.assignee_trigger }}"
+    - "--pr_number"
+    - "${{ inputs.pr_number }}"
     - "--guidelines_path"
     - "${{ inputs.guidelines_path }}"
     - "--include_patch"
