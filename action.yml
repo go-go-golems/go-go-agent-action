@@ -33,6 +33,26 @@ inputs:
     description: "Comma-separated globs to include extra repo files in context (e.g. docs/**/*.md,.github/*.md)"
     required: false
     default: ""
+  prompt_template_path:
+    description: "Optional repo path to a prompt template file"
+    required: false
+    default: ""
+  prompt_template_engine:
+    description: "Template engine to use (go-template)"
+    required: false
+    default: "go-template"
+  prompt_template_vars_json:
+    description: "Optional JSON object of variables for prompt template rendering"
+    required: false
+    default: "{}"
+  prompt_template_max_bytes:
+    description: "Max bytes to read from the prompt template file"
+    required: false
+    default: "200000"
+  tool_input_mode:
+    description: "Tool input payload: pr_context | prompt_text | both"
+    required: false
+    default: "pr_context"
   max_file_bytes:
     description: "Max bytes per file to include when include_file_contents=true"
     required: false
@@ -108,6 +128,14 @@ runs:
     - "${{ inputs.include_file_contents }}"
     - "--include_repo_globs"
     - "${{ inputs.include_repo_globs }}"
+    - "--prompt_template_path"
+    - "${{ inputs.prompt_template_path }}"
+    - "--prompt_template_engine"
+    - "${{ inputs.prompt_template_engine }}"
+    - "--prompt_template_vars_json"
+    - "${{ inputs.prompt_template_vars_json }}"
+    - "--prompt_template_max_bytes"
+    - "${{ inputs.prompt_template_max_bytes }}"
     - "--max_file_bytes"
     - "${{ inputs.max_file_bytes }}"
     - "--max_changed_files"
@@ -128,6 +156,8 @@ runs:
     - "${{ inputs.tool_args_json }}"
     - "--working_directory"
     - "${{ inputs.working_directory }}"
+    - "--tool_input_mode"
+    - "${{ inputs.tool_input_mode }}"
     - "--output_mode"
     - "${{ inputs.output_mode }}"
     - "--max_comments"

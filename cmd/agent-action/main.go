@@ -50,6 +50,10 @@ func main() {
 
 func buildTool(in *action.Inputs, env action.RuntimeEnv) (action.ReviewTool, error) {
 	mode := strings.ToLower(strings.TrimSpace(in.ToolMode))
+	inputMode := strings.ToLower(strings.TrimSpace(in.ToolInputMode))
+	if inputMode == "" {
+		inputMode = "pr_context"
+	}
 	switch mode {
 	case "", "mock":
 		return action.MockTool{}, nil
@@ -57,23 +61,47 @@ func buildTool(in *action.Inputs, env action.RuntimeEnv) (action.ReviewTool, err
 		if in.ToolURL == "" {
 			return nil, fmt.Errorf("tool_url is required for http mode")
 		}
-		return &action.HTTPTool{
-			Client:  http.DefaultClient,
-			URL:     in.ToolURL,
-			Method:  in.ToolMethod,
-			Headers: in.ToolHeaders,
-			Token:   in.ToolToken,
-		}, nil
+		switch inputMode {
+		case "pr_context", "both":
+			return &action.HTTPTool{
+				Client:  http.DefaultClient,
+				URL:     in.ToolURL,
+				Method:  in.ToolMethod,
+				Headers: in.ToolHeaders,
+				Token:   in.ToolToken,
+			}, nil
+		case "prompt_text":
+			return &action.PromptHTTPTool{
+				Client:  http.DefaultClient,
+				URL:     in.ToolURL,
+				Method:  in.ToolMethod,
+				Headers: in.ToolHeaders,
+				Token:   in.ToolToken,
+			}, nil
+		default:
+			return nil, fmt.Errorf("unknown tool_input_mode %q", in.ToolInputMode)
+		}
 	case "cmd":
 		workingDir := in.WorkingDir
 		if workingDir == "" {
 			workingDir = env.Workspace
 		}
-		return &action.CommandTool{
-			Command: in.ToolCmd,
-			Args:    in.ToolArgs,
-			Dir:     workingDir,
-		}, nil
+		switch inputMode {
+		case "pr_context", "both":
+			return &action.CommandTool{
+				Command: in.ToolCmd,
+				Args:    in.ToolArgs,
+				Dir:     workingDir,
+			}, nil
+		case "prompt_text":
+			return &action.PromptCommandTool{
+				Command: in.ToolCmd,
+				Args:    in.ToolArgs,
+				Dir:     workingDir,
+			}, nil
+		default:
+			return nil, fmt.Errorf("unknown tool_input_mode %q", in.ToolInputMode)
+		}
 	default:
 		return nil, fmt.Errorf("unknown tool_mode %q", in.ToolMode)
 	}

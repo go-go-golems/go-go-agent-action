@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
+
+	"github.com/go-go-golems/go-go-agent-action/internal/action/templating"
 )
 
 type githubService interface {
@@ -52,6 +55,19 @@ func (r *Runner) Run(ctx context.Context) error {
 	if !ShouldTrigger(r.Inputs, prc) {
 		fmt.Fprintf(r.Logger, "no review triggers matched; skipping for PR #%d\n", prc.Number)
 		return nil
+	}
+
+	if r.Inputs.PromptTemplatePath != "" {
+		prompt, meta, err := templating.RenderPrompt(r.Inputs, r.Env, prc, r.FileLoader)
+		if err != nil {
+			return err
+		}
+		prc.PromptText = prompt
+		prc.PromptMeta = meta
+	}
+
+	if strings.EqualFold(r.Inputs.ToolInputMode, "prompt_text") && prc.PromptText == "" {
+		return fmt.Errorf("tool_input_mode=prompt_text requires a rendered prompt (set prompt_template_path)")
 	}
 
 	result, err := r.Tool.Review(ctx, prc)

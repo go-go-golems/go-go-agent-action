@@ -11,24 +11,29 @@ import (
 
 // Inputs combines all configuration toggles passed by the Action metadata.
 type Inputs struct {
-	TriggerPhrase      string
-	LabelTrigger       string
-	AssigneeTrigger    string
-	GuidelinesPath     string
-	IncludePatch       bool
-	IncludeFileContent bool
-	IncludeRepoGlobs   []string
-	MaxFileBytes       int
-	MaxChangedFiles    int
+	TriggerPhrase          string
+	LabelTrigger           string
+	AssigneeTrigger        string
+	GuidelinesPath         string
+	IncludePatch           bool
+	IncludeFileContent     bool
+	IncludeRepoGlobs       []string
+	PromptTemplatePath     string
+	PromptTemplateEngine   string
+	PromptTemplateVars     map[string]any
+	PromptTemplateMaxBytes int
+	MaxFileBytes           int
+	MaxChangedFiles        int
 
-	ToolMode    string
-	ToolURL     string
-	ToolMethod  string
-	ToolHeaders map[string]string
-	ToolToken   string
-	ToolCmd     string
-	ToolArgs    []string
-	WorkingDir  string
+	ToolMode      string
+	ToolURL       string
+	ToolMethod    string
+	ToolHeaders   map[string]string
+	ToolToken     string
+	ToolCmd       string
+	ToolArgs      []string
+	WorkingDir    string
+	ToolInputMode string
 
 	OutputMode  string
 	MaxComments int
@@ -39,7 +44,8 @@ type Inputs struct {
 // canonical Inputs struct. The lookup function is passed so tests can stub env.
 func ParseInputs(args []string, lookup func(string) string) (*Inputs, error) {
 	in := &Inputs{
-		ToolHeaders: map[string]string{},
+		ToolHeaders:        map[string]string{},
+		PromptTemplateVars: map[string]any{},
 	}
 	fs := flag.NewFlagSet("agent-action", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
@@ -47,6 +53,7 @@ func ParseInputs(args []string, lookup func(string) string) (*Inputs, error) {
 	var headersJSON string
 	var toolArgsJSON string
 	var repoGlobsRaw string
+	var templateVarsJSON string
 
 	fs.StringVar(&in.TriggerPhrase, "trigger_phrase", envOrDefault(lookup, "INPUT_TRIGGER_PHRASE", "@agent"), "")
 	fs.StringVar(&in.LabelTrigger, "label_trigger", lookup("INPUT_LABEL_TRIGGER"), "")
@@ -56,6 +63,10 @@ func ParseInputs(args []string, lookup func(string) string) (*Inputs, error) {
 	fs.BoolVar(&in.IncludePatch, "include_patch", envBool(lookup, "INPUT_INCLUDE_PATCH", true), "")
 	fs.BoolVar(&in.IncludeFileContent, "include_file_contents", envBool(lookup, "INPUT_INCLUDE_FILE_CONTENTS", false), "")
 	fs.StringVar(&repoGlobsRaw, "include_repo_globs", lookup("INPUT_INCLUDE_REPO_GLOBS"), "")
+	fs.StringVar(&in.PromptTemplatePath, "prompt_template_path", lookup("INPUT_PROMPT_TEMPLATE_PATH"), "")
+	fs.StringVar(&in.PromptTemplateEngine, "prompt_template_engine", envOrDefault(lookup, "INPUT_PROMPT_TEMPLATE_ENGINE", "go-template"), "")
+	fs.StringVar(&templateVarsJSON, "prompt_template_vars_json", envOrDefault(lookup, "INPUT_PROMPT_TEMPLATE_VARS_JSON", "{}"), "")
+	fs.IntVar(&in.PromptTemplateMaxBytes, "prompt_template_max_bytes", envInt(lookup, "INPUT_PROMPT_TEMPLATE_MAX_BYTES", 200000), "")
 
 	fs.IntVar(&in.MaxFileBytes, "max_file_bytes", envInt(lookup, "INPUT_MAX_FILE_BYTES", 200000), "")
 	fs.IntVar(&in.MaxChangedFiles, "max_changed_files", envInt(lookup, "INPUT_MAX_CHANGED_FILES", 200), "")
@@ -68,6 +79,7 @@ func ParseInputs(args []string, lookup func(string) string) (*Inputs, error) {
 	fs.StringVar(&in.ToolCmd, "tool_cmd", lookup("INPUT_TOOL_CMD"), "")
 	fs.StringVar(&toolArgsJSON, "tool_args_json", envOrDefault(lookup, "INPUT_TOOL_ARGS_JSON", "[]"), "")
 	fs.StringVar(&in.WorkingDir, "working_directory", lookup("INPUT_WORKING_DIRECTORY"), "")
+	fs.StringVar(&in.ToolInputMode, "tool_input_mode", envOrDefault(lookup, "INPUT_TOOL_INPUT_MODE", "pr_context"), "")
 
 	fs.StringVar(&in.OutputMode, "output_mode", envOrDefault(lookup, "INPUT_OUTPUT_MODE", "review+summary"), "")
 	fs.IntVar(&in.MaxComments, "max_comments", envInt(lookup, "INPUT_MAX_COMMENTS", 30), "")
@@ -94,6 +106,11 @@ func ParseInputs(args []string, lookup func(string) string) (*Inputs, error) {
 	if toolArgsJSON != "" {
 		if err := json.Unmarshal([]byte(toolArgsJSON), &in.ToolArgs); err != nil {
 			return nil, fmt.Errorf("parse tool_args_json: %w", err)
+		}
+	}
+	if templateVarsJSON != "" {
+		if err := json.Unmarshal([]byte(templateVarsJSON), &in.PromptTemplateVars); err != nil {
+			return nil, fmt.Errorf("parse prompt_template_vars_json: %w", err)
 		}
 	}
 

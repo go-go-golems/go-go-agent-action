@@ -40,6 +40,15 @@ type PRContext struct {
 	EventName     string        `json:"event_name"`
 	TriggerText   string        `json:"trigger_text,omitempty"`
 	RunID         string        `json:"run_id"`
+	PromptText    string        `json:"prompt_text,omitempty"`
+	PromptMeta    *PromptMeta   `json:"prompt_meta,omitempty"`
+}
+
+// PromptMeta captures details about prompt rendering.
+type PromptMeta struct {
+	TemplatePath string `json:"template_path,omitempty"`
+	Engine       string `json:"engine,omitempty"`
+	RenderedAt   string `json:"rendered_at,omitempty"`
 }
 
 // ReviewComment mirrors GitHub's modern review comment shape.
