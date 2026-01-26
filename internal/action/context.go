@@ -230,8 +230,12 @@ func value(ptr *string) string {
 }
 
 func splitRepo(full string) (string, string) {
-	parts := strings.Split(full, "/")
-	if len(parts) != 2 {
+	full = strings.Trim(full, "/")
+	if full == "" {
+		return "", ""
+	}
+	parts := strings.SplitN(full, "/", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
 		return "", ""
 	}
 	return parts[0], parts[1]
