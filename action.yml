@@ -117,6 +117,10 @@ inputs:
     description: "Log GitHub API calls to stderr for debugging"
     required: false
     default: "false"
+  dry_run:
+    description: "Skip publishing to GitHub (print summaries only)"
+    required: false
+    default: "false"
 
 runs:
   using: "docker"
@@ -176,3 +180,5 @@ runs:
     - "${{ inputs.github_token }}"
     - "--debug_github_api"
     - "${{ inputs.debug_github_api }}"
+    - "--dry_run"
+    - "${{ inputs.dry_run }}"

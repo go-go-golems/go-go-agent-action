@@ -40,6 +40,7 @@ type Inputs struct {
 	MaxComments    int
 	GitHubToken    string
 	DebugGitHubAPI bool
+	DryRun         bool
 }
 
 // ParseInputs wires CLI args and INPUT_* environment variables to the
@@ -88,6 +89,7 @@ func ParseInputs(args []string, lookup func(string) string) (*Inputs, error) {
 	fs.IntVar(&in.MaxComments, "max_comments", envInt(lookup, "INPUT_MAX_COMMENTS", 30), "")
 	fs.StringVar(&in.GitHubToken, "github_token", lookup("INPUT_GITHUB_TOKEN"), "")
 	fs.BoolVar(&in.DebugGitHubAPI, "debug_github_api", envBool(lookup, "INPUT_DEBUG_GITHUB_API", false), "")
+	fs.BoolVar(&in.DryRun, "dry_run", envBool(lookup, "INPUT_DRY_RUN", false), "")
 
 	if err := fs.Parse(args); err != nil {
 		return nil, err

@@ -44,6 +44,11 @@ func (p *Publisher) Publish(ctx context.Context, pr *PRContext, result *ReviewRe
 		fmt.Fprintln(p.Stdout, result.SummaryMarkdown)
 	}
 
+	publishGitHub := !p.Inputs.DryRun && (modes["comment"] || modes["review"])
+	if !publishGitHub {
+		return nil
+	}
+
 	if modes["comment"] && result.IssueComment != "" {
 		_, _, err := p.GitHub.CreateIssueComment(ctx, pr.Owner, pr.Repo, pr.Number, &github.IssueComment{Body: github.String(result.IssueComment)})
 		if err != nil {
