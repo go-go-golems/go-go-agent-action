@@ -26,7 +26,7 @@ func main() {
 		token = os.Getenv("GITHUB_TOKEN")
 	}
 
-	gh := action.NewGitHubClient(ctx, token)
+	gh := action.NewGitHubClient(ctx, token, inputs.DebugGitHubAPI)
 
 	tool, err := buildTool(inputs, env)
 	if err != nil {

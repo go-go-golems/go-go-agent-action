@@ -29,6 +29,7 @@ See [`action.yml`](./action.yml) for the full list. Highlights:
 | `prompt_template_path`, `prompt_template_vars_json` | Customize prompts with Go templates + sprig |
 | `output_mode` | Mix of `review`, `comment`, `summary`, `stdout` |
 | `max_comments` | Inline comment cap |
+| `debug_github_api` | Log GitHub API calls to stderr for debugging |
 
 ## Mock Reviewer for Local Development
 

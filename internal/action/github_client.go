@@ -2,7 +2,9 @@ package action
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/google/go-github/v66/github"
 	"golang.org/x/oauth2"
@@ -17,14 +19,39 @@ type GitHubClient struct {
 
 // NewGitHubClient constructs a GitHub client authenticated with the provided
 // token. When token is empty the client still works for public repos but may be
-// heavily rate limited.
-func NewGitHubClient(ctx context.Context, token string) *GitHubClient {
+// heavily rate limited. When debug is true, GitHub API calls are logged to stderr.
+func NewGitHubClient(ctx context.Context, token string, debug bool) *GitHubClient {
 	var httpClient *http.Client
 	if token != "" {
 		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 		httpClient = oauth2.NewClient(ctx, ts)
 	}
+	if debug {
+		if httpClient == nil {
+			httpClient = &http.Client{}
+		}
+		transport := httpClient.Transport
+		if transport == nil {
+			transport = http.DefaultTransport
+		}
+		httpClient.Transport = &loggingRoundTripper{next: transport}
+	}
 	return &GitHubClient{client: github.NewClient(httpClient)}
+}
+
+type loggingRoundTripper struct {
+	next http.RoundTripper
+}
+
+func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	fmt.Fprintf(os.Stderr, "github api request: %s %s\n", req.Method, req.URL.String())
+	resp, err := l.next.RoundTrip(req)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "github api error: %s %s: %v\n", req.Method, req.URL.String(), err)
+		return nil, err
+	}
+	fmt.Fprintf(os.Stderr, "github api response: %s %s -> %d\n", req.Method, req.URL.String(), resp.StatusCode)
+	return resp, nil
 }
 
 func (c *GitHubClient) GetPullRequest(ctx context.Context, owner, repo string, number int) (*github.PullRequest, error) {

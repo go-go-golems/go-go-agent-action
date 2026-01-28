@@ -113,6 +113,10 @@ inputs:
     description: "GitHub token; defaults to GITHUB_TOKEN"
     required: false
     default: ""
+  debug_github_api:
+    description: "Log GitHub API calls to stderr for debugging"
+    required: false
+    default: "false"
 
 runs:
   using: "docker"
@@ -170,3 +174,5 @@ runs:
     - "${{ inputs.max_comments }}"
     - "--github_token"
     - "${{ inputs.github_token }}"
+    - "--debug_github_api"
+    - "${{ inputs.debug_github_api }}"
