@@ -116,7 +116,7 @@ inputs:
 
 runs:
   using: "docker"
-  image: "Dockerfile"
+  image: "docker://ghcr.io/go-go-golems/go-go-agent-action:task-moments-codex-action"
   args:
     - "--trigger_phrase"
     - "${{ inputs.trigger_phrase }}"
