@@ -16,6 +16,8 @@ RUN apt-get update \
     sqlite3 \
     git \
     curl \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 RUN python -m venv /opt/venv \
     && /opt/venv/bin/pip install --no-cache-dir \
@@ -25,6 +27,10 @@ RUN python -m venv /opt/venv \
     json-repair \
     git+https://github.com/opt-nc/yamlfixer
 ENV PATH="/opt/venv/bin:${PATH}"
+
+RUN npm install -g @openai/codex @anthropic-ai/claude-code
+RUN curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path
+ENV PATH="/root/.opencode/bin:${PATH}"
 WORKDIR /home/app
 COPY --from=builder /out/agent-action /usr/local/bin/agent-action
 ENTRYPOINT ["/usr/local/bin/agent-action"]

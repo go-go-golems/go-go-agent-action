@@ -26,6 +26,7 @@ See [`action.yml`](./action.yml) for the full list. Highlights:
 | `tool_cmd`, `tool_args_json`, `working_directory` | CLI tool wiring |
 | `trigger_phrase`, `label_trigger`, `assignee_trigger` | Control when the action actually runs |
 | `include_patch`, `include_file_contents`, `include_repo_globs`, `max_*` | Shape the code-review context |
+| `prompt_template_path`, `prompt_template_vars_json` | Customize prompts with Go templates + sprig |
 | `output_mode` | Mix of `review`, `comment`, `summary`, `stdout` |
 | `max_comments` | Inline comment cap |
 
@@ -117,3 +118,31 @@ Implement the response contract from [`internal/action/types.go`](internal/actio
 3. Gradually migrate consumers from mock to `http`/`cmd` modes once your review service is ready.
 
 The interfaces are intentionally small: once your LLM backend matures you can plug it in without rewiring how GitHub data is collected or posted.
+
+## Prompt Templating
+
+The action includes a powerful prompt templating system with:
+
+- **Go templates** with full [sprig](https://masterminds.github.io/sprig/) function library
+- **Embedded fragments** for ReviewResult output format, guidelines, and examples
+- **Custom variables** via `prompt_template_vars_json`
+
+Example template using embedded fragments:
+
+```
+{{ template "system-role" . }}
+
+## PR #{{ .PR.Number }}: {{ .PR.Title }}
+
+{{ range .PR.ChangedFiles }}
+### {{ .Path }}
+```diff
+{{ .Patch }}
+```
+{{ end }}
+
+{{ template "review-output-format" . }}
+{{ template "review-guidelines" . }}
+```
+
+See [`docs/prompt-templating.md`](docs/prompt-templating.md) for the full guide.

@@ -1,0 +1,17 @@
+{{- /*
+  response-requirements.tmpl - Final requirements for LLM response
+  
+  Usage in prompt templates:
+    {{ template "response-requirements" . }}
+    {{ template "response-requirements" dict "maxComments" 30 }}
+*/ -}}
+{{- define "response-requirements" -}}
+## Response Requirements
+
+1. **Always respond with valid JSON** – no markdown wrapping, no explanations outside the JSON
+2. **Always include** `summary_markdown`, `review_decision`, and `review_body`
+3. **Limit inline comments** to the most important issues (max {{ if .maxComments }}{{ .maxComments }}{{ else }}30{{ end }} comments)
+4. **Match line numbers to the diff** – comments on non-existent lines will fail
+5. **Use file-level comments** when line context is unavailable or for general feedback
+6. **Output ONLY the JSON object** – no other text before or after
+{{- end -}}

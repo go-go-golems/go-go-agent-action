@@ -1,0 +1,28 @@
+{{- /*
+  pr-context-description.tmpl - Describes the PRContext input structure
+  
+  Usage in prompt templates:
+    {{ template "pr-context-description" . }}
+*/ -}}
+{{- define "pr-context-description" -}}
+## Input Context
+
+You will receive a PRContext containing:
+
+- `owner`, `repo`, `number`: Repository and PR identifiers
+- `title`, `body`: PR title and description
+- `base_ref`, `head_ref`, `head_sha`: Branch information
+- `user_login`: PR author
+- `labels`, `assignees`: PR metadata
+- `changed_files`: Array of file changes with:
+  - `path`: File path
+  - `status`: added/modified/removed/renamed
+  - `patch`: Unified diff (when `include_patch=true`)
+  - `contents_b64`: Base64-encoded file contents (when `include_file_contents=true`)
+- `guidelines_b64`: Base64-encoded review guidelines (from CLAUDE.md or similar)
+- `extra_files`: Additional repository files
+- `triggered_by`: User who triggered the review
+- `event_name`: `pull_request` or `issue_comment`
+- `trigger_text`: Comment body for mention-triggered runs
+- `prompt_text`: Rendered prompt template (if configured)
+{{- end -}}

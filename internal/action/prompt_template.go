@@ -7,6 +7,9 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/Masterminds/sprig/v3"
+	"github.com/go-go-golems/go-go-agent-action/prompts"
 )
 
 type TemplateFile struct {
@@ -60,22 +63,12 @@ func RenderPrompt(in *Inputs, env RuntimeEnv, pr *PRContext, readFile FileLoader
 		Vars:         in.PromptTemplateVars,
 	}
 
-	tmpl, err := template.New("prompt").Option("missingkey=zero").Funcs(template.FuncMap{
-		"file": func(path string) string {
-			return extraMap[path]
-		},
-		"indent": func(spaces int, input string) string {
-			if spaces <= 0 || input == "" {
-				return input
-			}
-			pad := strings.Repeat(" ", spaces)
-			lines := strings.Split(input, "\n")
-			for i, line := range lines {
-				lines[i] = pad + line
-			}
-			return strings.Join(lines, "\n")
-		},
-	}).Parse(content)
+	tmpl, err := buildTemplate(extraMap)
+	if err != nil {
+		return "", nil, err
+	}
+
+	tmpl, err = tmpl.Parse(content)
 	if err != nil {
 		return "", nil, fmt.Errorf("parse prompt template: %w", err)
 	}
@@ -91,6 +84,58 @@ func RenderPrompt(in *Inputs, env RuntimeEnv, pr *PRContext, readFile FileLoader
 		RenderedAt:   time.Now().UTC().Format(time.RFC3339Nano),
 	}
 	return out.String(), meta, nil
+}
+
+// buildTemplate creates a template with all functions and embedded fragments.
+func buildTemplate(extraMap map[string]string) (*template.Template, error) {
+	// Start with sprig functions
+	funcs := sprig.TxtFuncMap()
+
+	// Add our custom functions (may override sprig where needed)
+	funcs["file"] = func(path string) string {
+		return extraMap[path]
+	}
+	// Override sprig's indent to match our behavior if needed
+	// (sprig's indent works differently - it doesn't indent empty lines)
+	funcs["indentBlock"] = func(spaces int, input string) string {
+		if spaces <= 0 || input == "" {
+			return input
+		}
+		pad := strings.Repeat(" ", spaces)
+		lines := strings.Split(input, "\n")
+		for i, line := range lines {
+			lines[i] = pad + line
+		}
+		return strings.Join(lines, "\n")
+	}
+
+	tmpl := template.New("prompt").Option("missingkey=zero").Funcs(funcs)
+
+	// Load embedded fragments
+	fragmentFiles, err := prompts.Fragments.ReadDir("fragments")
+	if err != nil {
+		return nil, fmt.Errorf("read embedded fragments: %w", err)
+	}
+
+	for _, f := range fragmentFiles {
+		if f.IsDir() {
+			continue
+		}
+		name := f.Name()
+		if !strings.HasSuffix(name, ".tmpl") {
+			continue
+		}
+		content, err := prompts.Fragments.ReadFile("fragments/" + name)
+		if err != nil {
+			return nil, fmt.Errorf("read fragment %q: %w", name, err)
+		}
+		_, err = tmpl.Parse(string(content))
+		if err != nil {
+			return nil, fmt.Errorf("parse fragment %q: %w", name, err)
+		}
+	}
+
+	return tmpl, nil
 }
 
 func readWorkspaceFile(workspace, rel string, limit int, readFile FileLoader) (string, error) {

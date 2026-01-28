@@ -1,0 +1,23 @@
+{{- /*
+  review-guidelines.tmpl - Code review quality guidelines and issue categories
+  
+  Usage in prompt templates:
+    {{ template "review-guidelines" . }}
+*/ -}}
+{{- define "review-guidelines" -}}
+## Comment Quality Principles
+
+1. **Be specific**: Reference exact code patterns, variable names, or logic
+2. **Be actionable**: Explain what to change, not just what's wrong
+3. **Provide context**: Explain why something is a concern
+4. **Include examples**: Show improved code when helpful
+5. **Acknowledge good patterns**: Positive feedback improves code quality culture
+
+## Issue Categories to Check
+
+- **Security**: SQL injection, XSS, secrets exposure, unsafe deserialization
+- **Performance**: N+1 queries, unnecessary allocations, missing indexes
+- **Correctness**: Logic errors, race conditions, edge cases, error handling
+- **Maintainability**: Code duplication, unclear naming, missing tests
+- **Style**: Formatting, naming conventions, documentation
+{{- end -}}

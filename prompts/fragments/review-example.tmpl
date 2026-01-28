@@ -1,0 +1,36 @@
+{{- /*
+  review-example.tmpl - Example ReviewResult output
+  
+  Usage in prompt templates:
+    {{ template "review-example" . }}
+*/ -}}
+{{- define "review-example" -}}
+## Example Output
+
+```json
+{
+  "summary_markdown": "### Code Review for #123\n\n**Files analyzed:** 5\n**Issues found:** 3 (1 blocking, 2 suggestions)\n\n#### Security\n- ⚠️ SQL query uses string interpolation (`user_service.go:45`)\n\n#### Performance\n- 💡 Consider adding database index for `user_email` lookup\n\n#### Testing\n- ✅ Good test coverage for new handler",
+  "review_decision": "REQUEST_CHANGES",
+  "review_body": "Overall the implementation looks solid, but there's a SQL injection vulnerability that needs to be fixed before merging.\n\n**Blocking:**\n- SQL query in `user_service.go` uses string interpolation. Use parameterized queries.\n\n**Suggestions:**\n- Consider adding an index for the email lookup.\n- The new handler has good test coverage—nice work!",
+  "comments": [
+    {
+      "path": "internal/service/user_service.go",
+      "line": 45,
+      "side": "RIGHT",
+      "body": "🚨 **Security Issue**: This query uses string interpolation which is vulnerable to SQL injection.\n\n**Current:**\n```go\nquery := fmt.Sprintf(\"SELECT * FROM users WHERE email = '%s'\", email)\n```\n\n**Suggested fix:**\n```go\nquery := \"SELECT * FROM users WHERE email = $1\"\nrows, err := db.Query(query, email)\n```"
+    },
+    {
+      "path": "internal/repository/user_repo.go",
+      "line": 23,
+      "side": "RIGHT",
+      "body": "💡 **Performance**: This query filters by `email` frequently. Consider adding a database index:\n\n```sql\nCREATE INDEX idx_users_email ON users(email);\n```"
+    },
+    {
+      "path": "internal/handler/user_handler_test.go",
+      "subject_type": "file",
+      "body": "✅ Good test coverage! The table-driven tests are well-structured and cover the main scenarios."
+    }
+  ]
+}
+```
+{{- end -}}

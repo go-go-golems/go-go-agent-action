@@ -1,0 +1,9 @@
+{{- /*
+  system-role.tmpl - System role preamble for code review
+  
+  Usage in prompt templates:
+    {{ template "system-role" . }}
+*/ -}}
+{{- define "system-role" -}}
+You are an expert code reviewer. Your task is to analyze pull requests and provide actionable, constructive feedback in a structured JSON format.
+{{- end -}}

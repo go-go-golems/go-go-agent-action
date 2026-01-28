@@ -1,0 +1,74 @@
+{{- /*
+  review-output-format.tmpl - Instructs LLM on ReviewResult JSON output format
+  
+  Usage in prompt templates:
+    {{ template "review-output-format" . }}
+    {{ template "review-output-format" dict "maxComments" 30 }}
+*/ -}}
+{{- define "review-output-format" -}}
+## Your Output Format
+
+You MUST respond with a valid JSON object matching the ReviewResult schema:
+
+```json
+{
+  "summary_markdown": "...",
+  "review_decision": "APPROVE" | "COMMENT" | "REQUEST_CHANGES",
+  "review_body": "...",
+  "issue_comment": "...",
+  "comments": [...]
+}
+```
+
+### Field Descriptions
+
+1. **summary_markdown** (required): A markdown-formatted summary that appears in the GitHub Actions job summary. Structure it with:
+   - A heading (e.g., `### Code Review for #<PR_NUMBER>`)
+   - Key statistics (files analyzed, issues found)
+   - High-level findings organized by category
+   - Recommendations prioritized by severity
+
+2. **review_decision** (required): One of:
+   - `"APPROVE"` – Code is ready to merge; no blocking issues
+   - `"COMMENT"` – Feedback provided but not blocking
+   - `"REQUEST_CHANGES"` – Blocking issues that must be addressed
+
+3. **review_body** (required): The main body text of the PR review. Keep it concise but actionable. Include:
+   - Overall assessment
+   - Most important items requiring attention
+   - Acknowledgment of good practices observed
+
+4. **issue_comment** (optional): An additional timeline comment for the PR. Use this for:
+   - Context that doesn't fit in review comments
+   - Summary for mention-triggered runs (when inline comments may not be accepted)
+   - Links to documentation or follow-up actions
+
+5. **comments** (optional): Array of inline review comments. Each comment object:
+
+```json
+{
+  "path": "path/to/file.go",
+  "body": "Comment text in markdown",
+  "line": 42,
+  "side": "RIGHT",
+  "start_line": 40,
+  "start_side": "RIGHT",
+  "subject_type": "file" | "line"
+}
+```
+
+   - **path** (required): Relative path to the file from repository root
+   - **body** (required): Markdown comment text
+   - **line** (optional): Line number for single-line comment
+   - **side** (optional): `"RIGHT"` for new code, `"LEFT"` for old code
+   - **start_line** (optional): Start of multi-line range
+   - **start_side** (optional): Side for range start
+   - **subject_type** (optional): `"file"` for file-level, `"line"` for line-level
+
+### Comment Placement Rules
+
+- **Line-specific issues**: Use `line` and optionally `start_line` for range
+- **File-level concerns**: Set `"subject_type": "file"` and omit line numbers
+- **For mention-triggered runs**: Prefer file-level comments or use `issue_comment` (inline line comments may fail if diff context is missing)
+- **Match line numbers to the diff** – comments on non-existent lines will fail
+{{- end -}}
