@@ -66,11 +66,13 @@ func (p *Publisher) Publish(ctx context.Context, pr *PRContext, result *ReviewRe
 }
 
 func (p *Publisher) publishReview(ctx context.Context, pr *PRContext, result *ReviewResult) error {
-	comments := make([]*github.DraftReviewComment, 0, len(result.Comments))
-	for i, comment := range result.Comments {
-		if i >= p.Inputs.MaxComments {
-			break
-		}
+	sanitized, reviewBody, warnings := sanitizeReviewComments(pr, result.Comments, result.ReviewBody, p.Inputs.MaxComments)
+	for _, warning := range warnings {
+		fmt.Fprintf(os.Stderr, "warning: %s\n", warning)
+	}
+
+	comments := make([]*github.DraftReviewComment, 0, len(sanitized))
+	for _, comment := range sanitized {
 		draft := &github.DraftReviewComment{
 			Path: github.String(comment.Path),
 			Body: github.String(comment.Body),
@@ -94,7 +96,7 @@ func (p *Publisher) publishReview(ctx context.Context, pr *PRContext, result *Re
 		comments = append(comments, draft)
 	}
 
-	if len(comments) == 0 && strings.TrimSpace(result.ReviewBody) == "" && result.ReviewDecision == "" {
+	if len(comments) == 0 && strings.TrimSpace(reviewBody) == "" && result.ReviewDecision == "" {
 		return nil
 	}
 
@@ -111,13 +113,13 @@ func (p *Publisher) publishReview(ctx context.Context, pr *PRContext, result *Re
 	}
 
 	req := &github.PullRequestReviewRequest{
-		Body:     github.String(result.ReviewBody),
+		Body:     github.String(reviewBody),
 		Event:    github.String(event),
 		Comments: comments,
 	}
 
 	if _, _, err := p.GitHub.CreateReview(ctx, pr.Owner, pr.Repo, pr.Number, req); err != nil {
-		return fmt.Errorf("create review: %w", err)
+		return fmt.Errorf("create review: %w; comments=%s", err, summarizeDraftComments(comments))
 	}
 	return nil
 }
