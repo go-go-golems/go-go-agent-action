@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -154,7 +155,7 @@ func (c *CommandTool) Review(ctx context.Context, pr *PRContext) (*ReviewResult,
 	cmd.Stdin = bytes.NewReader(payload)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	cmd.Stderr = toolStderr(&stderr)
 
 	if err := cmd.Run(); err != nil {
 		return nil, fmt.Errorf("tool command failed: %v\nstderr: %s", err, stderr.String())
@@ -194,7 +195,7 @@ func (c *PromptCommandTool) Review(ctx context.Context, pr *PRContext) (*ReviewR
 	cmd.Stdin = strings.NewReader(pr.PromptText)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	cmd.Stderr = toolStderr(&stderr)
 
 	if err := cmd.Run(); err != nil {
 		return nil, fmt.Errorf("tool command failed: %v\nstderr: %s", err, stderr.String())
@@ -247,4 +248,12 @@ func (MockTool) Review(_ context.Context, pr *PRContext) (*ReviewResult, error) 
 		ReviewDecision:  "comment",
 		ReviewBody:      "Automated mock review",
 	}, nil
+}
+
+func toolStderr(buffer *bytes.Buffer) io.Writer {
+	val := strings.TrimSpace(os.Getenv("GO_GO_AGENT_ACTION_LOG_TOOL_STDERR"))
+	if strings.EqualFold(val, "1") || strings.EqualFold(val, "true") {
+		return io.MultiWriter(buffer, os.Stderr)
+	}
+	return buffer
 }
