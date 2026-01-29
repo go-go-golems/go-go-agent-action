@@ -99,6 +99,7 @@ func sanitizeReviewComments(pr *PRContext, comments []ReviewComment, reviewBody 
 	lineSets := buildPatchLineSets(pr.ChangedFiles)
 	var kept []ReviewComment
 	var dropped []ReviewComment
+	var fileNotes []ReviewComment
 	var warnings []string
 
 	for i, comment := range comments {
@@ -109,8 +110,18 @@ func sanitizeReviewComments(pr *PRContext, comments []ReviewComment, reviewBody 
 		}
 
 		if strings.EqualFold(comment.Subject, "file") {
-			warnings = append(warnings, fmt.Sprintf("dropping comment[%d] path=%q: subject_type=file not supported for inline comments", i, comment.Path))
-			dropped = append(dropped, comment)
+			if strings.TrimSpace(comment.Path) == "" {
+				warnings = append(warnings, fmt.Sprintf("dropping file comment[%d]: empty path", i))
+				dropped = append(dropped, comment)
+				continue
+			}
+			if _, ok := lineSets[comment.Path]; !ok {
+				warnings = append(warnings, fmt.Sprintf("dropping file comment[%d] path=%q: not in changed files", i, comment.Path))
+				dropped = append(dropped, comment)
+				continue
+			}
+			warnings = append(warnings, fmt.Sprintf("file comment[%d] path=%q: moved to review body", i, comment.Path))
+			fileNotes = append(fileNotes, comment)
 			continue
 		}
 
@@ -119,6 +130,7 @@ func sanitizeReviewComments(pr *PRContext, comments []ReviewComment, reviewBody 
 			dropped = append(dropped, comment)
 			continue
 		}
+
 		lineSet, ok := lineSets[comment.Path]
 		if !ok {
 			warnings = append(warnings, fmt.Sprintf("dropping comment[%d] path=%q: not in changed files", i, comment.Path))
@@ -186,6 +198,9 @@ func sanitizeReviewComments(pr *PRContext, comments []ReviewComment, reviewBody 
 	if len(dropped) > 0 {
 		reviewBody = appendDroppedComments(reviewBody, dropped)
 	}
+	if len(fileNotes) > 0 {
+		reviewBody = appendFileLevelComments(reviewBody, fileNotes)
+	}
 
 	return kept, reviewBody, warnings
 }
@@ -207,6 +222,32 @@ func appendDroppedComments(reviewBody string, dropped []ReviewComment) string {
 		if comment.Line > 0 {
 			loc = fmt.Sprintf("%s:%d", loc, comment.Line)
 		}
+		if loc == "" {
+			loc = "(no path)"
+		}
+		body := strings.TrimSpace(comment.Body)
+		if body == "" {
+			body = "(no body)"
+		}
+		b.WriteString(fmt.Sprintf("- %s: %s\n", loc, body))
+	}
+	return b.String()
+}
+
+func appendFileLevelComments(reviewBody string, comments []ReviewComment) string {
+	const maxNotes = 20
+	var b strings.Builder
+	if strings.TrimSpace(reviewBody) != "" {
+		b.WriteString(reviewBody)
+		b.WriteString("\n\n")
+	}
+	b.WriteString("### File-level comments\n")
+	for i, comment := range comments {
+		if i >= maxNotes {
+			b.WriteString(fmt.Sprintf("- ...and %d more file-level comments\n", len(comments)-maxNotes))
+			break
+		}
+		loc := strings.TrimSpace(comment.Path)
 		if loc == "" {
 			loc = "(no path)"
 		}
