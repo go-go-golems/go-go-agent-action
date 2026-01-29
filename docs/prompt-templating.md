@@ -113,6 +113,7 @@ The action embeds reusable template fragments in `prompts/fragments/`. Use them 
 |----------|-------------|
 | `system-role` | Basic system role preamble for code review |
 | `review-output-format` | Full ReviewResult JSON schema documentation |
+| `review-output-schema` | JSON Schema for ReviewResult output |
 | `review-guidelines` | Comment quality principles and issue categories |
 | `review-example` | Example ReviewResult JSON output |
 | `response-requirements` | Final requirements (valid JSON, limits, etc.) |
@@ -127,6 +128,9 @@ The action embeds reusable template fragments in `prompts/fragments/`. Use them 
 
 {{/* Include output format instructions */}}
 {{ template "review-output-format" . }}
+
+{{/* Include the JSON schema */}}
+{{ template "review-output-schema" . }}
 
 {{/* Add review guidelines */}}
 {{ template "review-guidelines" . }}

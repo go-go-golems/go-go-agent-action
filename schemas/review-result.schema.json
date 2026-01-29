@@ -1,0 +1,352 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "summary_markdown",
+    "review_decision",
+    "review_body",
+    "issue_comment",
+    "comments",
+    "diary"
+  ],
+  "properties": {
+    "summary_markdown": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Markdown summary for GitHub Actions job summary"
+    },
+    "review_decision": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "APPROVE",
+        "COMMENT",
+        "REQUEST_CHANGES",
+        null
+      ],
+      "description": "GitHub review decision"
+    },
+    "review_body": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Main body text of the PR review"
+    },
+    "issue_comment": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Optional additional timeline comment"
+    },
+    "comments": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "body",
+          "line",
+          "side",
+          "start_line",
+          "start_side",
+          "subject_type"
+        ],
+        "properties": {
+          "path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "body": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "line": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "side": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "LEFT",
+              "RIGHT",
+              null
+            ]
+          },
+          "start_line": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "start_side": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "LEFT",
+              "RIGHT",
+              null
+            ]
+          },
+          "subject_type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "file",
+              "line",
+              null
+            ]
+          }
+        }
+      }
+    },
+    "diary": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "files_examined",
+        "what_i_looked_for",
+        "what_i_found",
+        "uncertainties",
+        "what_i_learned",
+        "tricky_to_analyze",
+        "second_pair_of_eyes",
+        "future_work",
+        "review_instructions",
+        "technical_details"
+      ],
+      "properties": {
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "files_examined": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "summary",
+              "patterns_checked"
+            ],
+            "properties": {
+              "path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "summary": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "patterns_checked": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "what_i_looked_for": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "what_i_found": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "description",
+              "file",
+              "line"
+            ],
+            "properties": {
+              "type": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "description": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "file": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "line": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "uncertainties": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "description",
+              "reason",
+              "file",
+              "line"
+            ],
+            "properties": {
+              "description": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "file": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "line": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "what_i_learned": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "tricky_to_analyze": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "second_pair_of_eyes": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "future_work": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "review_instructions": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "technical_details": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}
