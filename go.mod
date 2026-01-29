@@ -2,6 +2,8 @@ module github.com/go-go-golems/go-go-agent-action
 
 go 1.22
 
+toolchain go1.22.12
+
 require (
 	github.com/google/go-github/v66 v66.0.0
 	golang.org/x/oauth2 v0.22.0
