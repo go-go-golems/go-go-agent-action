@@ -75,7 +75,7 @@ func writeDiaryQuickStats(b *strings.Builder, diary *AgentDiary) {
 		stats = append(stats, "No additional diary details provided.")
 	}
 	for _, stat := range stats {
-		b.WriteString(fmt.Sprintf("- %s\n", stat))
+		fmt.Fprintf(b, "- %s\n", stat)
 	}
 }
 
@@ -105,7 +105,7 @@ func writeDiaryFiles(b *strings.Builder, diary *AgentDiary) {
 				if pattern == "" {
 					continue
 				}
-				b.WriteString(fmt.Sprintf("    - %s\n", pattern))
+				fmt.Fprintf(b, "    - %s\n", pattern)
 			}
 		}
 	}
@@ -117,9 +117,9 @@ func writeDiaryList(b *strings.Builder, title string, entries []string) {
 	if len(entries) == 0 {
 		return
 	}
-	b.WriteString(fmt.Sprintf("#### %s\n\n", title))
+	fmt.Fprintf(b, "#### %s\n\n", title)
 	for _, entry := range entries {
-		b.WriteString(fmt.Sprintf("- %s\n", entry))
+		fmt.Fprintf(b, "- %s\n", entry)
 	}
 	b.WriteString("\n")
 }
