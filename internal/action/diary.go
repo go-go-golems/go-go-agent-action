@@ -140,9 +140,9 @@ func writeDiaryFindings(b *strings.Builder, findings []DiaryFinding) {
 		}
 		location := formatDiaryLocation(finding.File, finding.Line)
 		if location != "" {
-			b.WriteString(fmt.Sprintf("- %s%s (%s)\n", prefix, desc, location))
+			fmt.Fprintf(b, "- %s%s (%s)\n", prefix, desc, location)
 		} else {
-			b.WriteString(fmt.Sprintf("- %s%s\n", prefix, desc))
+			fmt.Fprintf(b, "- %s%s\n", prefix, desc)
 		}
 	}
 	b.WriteString("\n")
@@ -162,13 +162,13 @@ func writeDiaryUncertainties(b *strings.Builder, uncertainties []DiaryUncertaint
 		location := formatDiaryLocation(entry.File, entry.Line)
 		switch {
 		case reason != "" && location != "":
-			b.WriteString(fmt.Sprintf("- %s (reason: %s, %s)\n", desc, reason, location))
+			fmt.Fprintf(b, "- %s (reason: %s, %s)\n", desc, reason, location)
 		case reason != "":
-			b.WriteString(fmt.Sprintf("- %s (reason: %s)\n", desc, reason))
+			fmt.Fprintf(b, "- %s (reason: %s)\n", desc, reason)
 		case location != "":
-			b.WriteString(fmt.Sprintf("- %s (%s)\n", desc, location))
+			fmt.Fprintf(b, "- %s (%s)\n", desc, location)
 		default:
-			b.WriteString(fmt.Sprintf("- %s\n", desc))
+			fmt.Fprintf(b, "- %s\n", desc)
 		}
 	}
 	b.WriteString("\n")
