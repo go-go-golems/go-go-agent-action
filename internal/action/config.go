@@ -25,6 +25,7 @@ type Inputs struct {
 	PromptTemplateMaxBytes int
 	MaxFileBytes           int
 	MaxChangedFiles        int
+	IncludeDiary           bool
 
 	ToolMode      string
 	ToolURL       string
@@ -74,6 +75,7 @@ func ParseInputs(args []string, lookup func(string) string) (*Inputs, error) {
 
 	fs.IntVar(&in.MaxFileBytes, "max_file_bytes", envInt(lookup, "INPUT_MAX_FILE_BYTES", 200000), "")
 	fs.IntVar(&in.MaxChangedFiles, "max_changed_files", envInt(lookup, "INPUT_MAX_CHANGED_FILES", 200), "")
+	fs.BoolVar(&in.IncludeDiary, "include_diary", envBool(lookup, "INPUT_INCLUDE_DIARY", false), "")
 
 	fs.StringVar(&in.ToolMode, "tool_mode", envOrDefault(lookup, "INPUT_TOOL_MODE", "mock"), "")
 	fs.StringVar(&in.ToolURL, "tool_url", lookup("INPUT_TOOL_URL"), "")
@@ -118,6 +120,9 @@ func ParseInputs(args []string, lookup func(string) string) (*Inputs, error) {
 		if err := json.Unmarshal([]byte(templateVarsJSON), &in.PromptTemplateVars); err != nil {
 			return nil, fmt.Errorf("parse prompt_template_vars_json: %w", err)
 		}
+	}
+	if _, ok := in.PromptTemplateVars["include_diary"]; !ok {
+		in.PromptTemplateVars["include_diary"] = in.IncludeDiary
 	}
 
 	return in, nil

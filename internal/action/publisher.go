@@ -37,11 +37,15 @@ func (p *Publisher) Publish(ctx context.Context, pr *PRContext, result *ReviewRe
 
 	modes := parseOutputModes(p.Inputs.OutputMode)
 
-	if modes["summary"] && result.SummaryMarkdown != "" && p.Env.StepSummaryPath != "" {
-		_ = p.WriteFile(p.Env.StepSummaryPath, []byte(result.SummaryMarkdown), 0644)
+	summary := result.SummaryMarkdown
+	if modes["diary"] && result.Diary != nil {
+		summary = appendDiaryMarkdown(summary, formatDiarySection(result.Diary, diaryRenderFull))
 	}
-	if modes["stdout"] && result.SummaryMarkdown != "" {
-		fmt.Fprintln(p.Stdout, result.SummaryMarkdown)
+	if modes["summary"] && summary != "" && p.Env.StepSummaryPath != "" {
+		_ = p.WriteFile(p.Env.StepSummaryPath, []byte(summary), 0644)
+	}
+	if modes["stdout"] && summary != "" {
+		fmt.Fprintln(p.Stdout, summary)
 	}
 
 	publishGitHub := !p.Inputs.DryRun && (modes["comment"] || modes["review"])
@@ -69,6 +73,9 @@ func (p *Publisher) publishReview(ctx context.Context, pr *PRContext, result *Re
 	sanitized, reviewBody, warnings := sanitizeReviewComments(pr, result.Comments, result.ReviewBody, p.Inputs.MaxComments)
 	for _, warning := range warnings {
 		fmt.Fprintf(os.Stderr, "warning: %s\n", warning)
+	}
+	if modes := parseOutputModes(p.Inputs.OutputMode); modes["diary"] && result.Diary != nil {
+		reviewBody = appendDiaryMarkdown(reviewBody, formatDiarySection(result.Diary, diaryRenderBrief))
 	}
 
 	comments := make([]*github.DraftReviewComment, 0, len(sanitized))

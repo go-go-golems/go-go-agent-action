@@ -27,7 +27,8 @@ See [`action.yml`](./action.yml) for the full list. Highlights:
 | `trigger_phrase`, `label_trigger`, `assignee_trigger` | Control when the action actually runs |
 | `include_patch`, `include_file_contents`, `include_repo_globs`, `max_*` | Shape the code-review context |
 | `prompt_template_path`, `prompt_template_vars_json` | Customize prompts with Go templates + sprig |
-| `output_mode` | Mix of `review`, `comment`, `summary`, `stdout` |
+| `include_diary` | Ask the tool to include a structured diary in its JSON output |
+| `output_mode` | Mix of `review`, `comment`, `summary`, `stdout`, `diary` |
 | `max_comments` | Inline comment cap |
 | `debug_github_api` | Log GitHub API calls to stderr for debugging |
 | `dry_run` | Skip publishing to GitHub (print summaries only) |

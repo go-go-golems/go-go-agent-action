@@ -1,0 +1,28 @@
+{{- /*
+  diary-instructions.tmpl - Optional diary guidance for ReviewResult output
+
+  Usage in prompt templates:
+    {{ if .Vars.include_diary }}{{ template "diary-instructions" . }}{{ end }}
+*/ -}}
+{{- define "diary-instructions" -}}
+## Diary Requirements
+
+Maintain a structured diary of your review process and include it under the `diary` field.
+
+Include:
+1. **summary**: 1-2 short paragraphs of what you reviewed and how you reached conclusions.
+2. **files_examined**: Each file you inspected and a 1-line summary.
+3. **what_i_looked_for**: The patterns or issues you actively checked.
+4. **what_i_found**: Key findings (positive, issues, or suggestions).
+5. **uncertainties**: Anything you could not verify or need a second look.
+
+Optional:
+- **what_i_learned**
+- **tricky_to_analyze**
+- **second_pair_of_eyes**
+- **future_work**
+- **review_instructions**
+- **technical_details**
+
+Return the diary as JSON inside the `diary` field.
+{{- end -}}

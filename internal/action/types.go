@@ -70,6 +70,45 @@ type ReviewResult struct {
 	IssueComment    string          `json:"issue_comment,omitempty"`
 	ReviewDecision  string          `json:"review_decision,omitempty"`
 	ReviewBody      string          `json:"review_body,omitempty"`
+	Diary           *AgentDiary     `json:"diary,omitempty"`
+}
+
+// AgentDiary captures the reviewer's internal reasoning in a structured format.
+type AgentDiary struct {
+	Summary            string             `json:"summary,omitempty"`
+	FilesExamined      []DiaryFileEntry   `json:"files_examined,omitempty"`
+	WhatILookedFor     []string           `json:"what_i_looked_for,omitempty"`
+	WhatIFound         []DiaryFinding     `json:"what_i_found,omitempty"`
+	Uncertainties      []DiaryUncertainty `json:"uncertainties,omitempty"`
+	WhatILearned       []string           `json:"what_i_learned,omitempty"`
+	TrickyToAnalyze    []string           `json:"tricky_to_analyze,omitempty"`
+	SecondPairOfEyes   []string           `json:"second_pair_of_eyes,omitempty"`
+	FutureWork         []string           `json:"future_work,omitempty"`
+	ReviewInstructions string             `json:"review_instructions,omitempty"`
+	TechnicalDetails   string             `json:"technical_details,omitempty"`
+}
+
+// DiaryFileEntry summarizes how a file was reviewed.
+type DiaryFileEntry struct {
+	Path            string   `json:"path,omitempty"`
+	Summary         string   `json:"summary,omitempty"`
+	PatternsChecked []string `json:"patterns_checked,omitempty"`
+}
+
+// DiaryFinding records a notable outcome from the review.
+type DiaryFinding struct {
+	Type        string `json:"type,omitempty"`
+	Description string `json:"description,omitempty"`
+	File        string `json:"file,omitempty"`
+	Line        int    `json:"line,omitempty"`
+}
+
+// DiaryUncertainty captures items that need verification or a second look.
+type DiaryUncertainty struct {
+	Description string `json:"description,omitempty"`
+	Reason      string `json:"reason,omitempty"`
+	File        string `json:"file,omitempty"`
+	Line        int    `json:"line,omitempty"`
 }
 
 // DecodeGuidelines decodes the embedded guidelines file.

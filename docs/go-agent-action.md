@@ -34,7 +34,7 @@ Most customization happens through action inputs described in `action.yml`. Each
 - **Trigger controls** ensure reviews only happen when requested: `trigger_phrase` (default `@agent`), `label_trigger`, and `assignee_trigger`.
 - **Context shaping** decides how much data is sent to the review tool: `include_patch`, `include_file_contents`, `include_repo_globs`, `guidelines_path`, plus `max_file_bytes` and `max_changed_files` caps.
 - **Tool selection** swaps the review backend: `tool_mode` (`mock`, `http`, or `cmd`). HTTP mode uses `tool_url`, `tool_method`, `tool_headers_json`, `tool_token`. Command mode uses `tool_cmd`, `tool_args_json`, and `working_directory`.
-- **Output routing** sets `output_mode` (any mix of `review`, `comment`, `summary`, `stdout`) and `max_comments` to bound how many inline notes are posted.
+- **Output routing** sets `output_mode` (any mix of `review`, `comment`, `summary`, `stdout`, `diary`) and `max_comments` to bound how many inline notes are posted.
 - **Authentication** falls back to the runner-provided `GITHUB_TOKEN` unless `github_token` is explicitly provided.
 
 ## Execution Flow

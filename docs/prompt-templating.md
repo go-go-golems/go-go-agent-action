@@ -67,7 +67,7 @@ Your template receives a `TemplateData` struct with these fields:
 | `.Guidelines` | `string` | Decoded contents of guidelines file |
 | `.ExtraFiles` | `[]TemplateFile` | Array of extra repo files |
 | `.ExtraFileMap` | `map[string]string` | Map of path → contents |
-| `.Vars` | `map[string]any` | Custom variables from `prompt_template_vars_json` |
+| `.Vars` | `map[string]any` | Custom variables from `prompt_template_vars_json` (includes `include_diary` when set via action input) |
 
 ### PRContext Fields
 
@@ -117,6 +117,7 @@ The action embeds reusable template fragments in `prompts/fragments/`. Use them 
 | `review-example` | Example ReviewResult JSON output |
 | `response-requirements` | Final requirements (valid JSON, limits, etc.) |
 | `pr-context-description` | Documentation of PRContext input fields |
+| `diary-instructions` | Optional diary guidance for ReviewResult output |
 
 ### Fragment Usage
 
@@ -135,6 +136,9 @@ The action embeds reusable template fragments in `prompts/fragments/`. Use them 
 
 {{/* Final requirements */}}
 {{ template "response-requirements" . }}
+
+{{/* Optional diary instructions */}}
+{{ if .Vars.include_diary }}{{ template "diary-instructions" . }}{{ end }}
 
 {{/* Or pass custom data to fragments */}}
 {{ template "response-requirements" dict "maxComments" 50 }}

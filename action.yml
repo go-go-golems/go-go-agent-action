@@ -53,6 +53,10 @@ inputs:
     description: "Max bytes to read from the prompt template file"
     required: false
     default: "200000"
+  include_diary:
+    description: "Ask the tool to return a structured diary in the ReviewResult"
+    required: false
+    default: "false"
   tool_input_mode:
     description: "Tool input payload: pr_context | prompt_text | both"
     required: false
@@ -101,7 +105,7 @@ inputs:
     default: ""
 
   output_mode:
-    description: "Where to post results: review | comment | summary | stdout | review+summary"
+    description: "Where to post results: review | comment | summary | stdout | diary | review+summary"
     required: false
     default: "review+summary"
   max_comments:
@@ -124,7 +128,7 @@ inputs:
 
 runs:
   using: "docker"
-  image: "docker://ghcr.io/go-go-golems/go-go-agent-action:task-moments-codex-action"
+  image: "docker://ghcr.io/go-go-golems/go-go-agent-action:main"
   args:
     - "--trigger_phrase"
     - "${{ inputs.trigger_phrase }}"
@@ -150,6 +154,8 @@ runs:
     - "${{ inputs.prompt_template_vars_json }}"
     - "--prompt_template_max_bytes"
     - "${{ inputs.prompt_template_max_bytes }}"
+    - "--include_diary"
+    - "${{ inputs.include_diary }}"
     - "--max_file_bytes"
     - "${{ inputs.max_file_bytes }}"
     - "--max_changed_files"

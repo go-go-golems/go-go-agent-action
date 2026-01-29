@@ -247,7 +247,35 @@ func (MockTool) Review(_ context.Context, pr *PRContext) (*ReviewResult, error) 
 		Comments:        comments,
 		ReviewDecision:  "comment",
 		ReviewBody:      "Automated mock review",
+		Diary: &AgentDiary{
+			Summary:       fmt.Sprintf("Reviewed %d file(s) using the mock tool.", len(pr.ChangedFiles)),
+			FilesExamined: buildMockDiaryFiles(pr.ChangedFiles),
+			WhatILookedFor: []string{
+				"Debug prints and other temporary code",
+				"Patterns that match the mock review rules",
+			},
+			WhatIFound: []DiaryFinding{
+				{
+					Type:        "info",
+					Description: "Mock tool emits a sample finding for demonstration.",
+				},
+			},
+		},
 	}, nil
+}
+
+func buildMockDiaryFiles(files []ChangedFile) []DiaryFileEntry {
+	if len(files) == 0 {
+		return nil
+	}
+	out := make([]DiaryFileEntry, 0, len(files))
+	for _, file := range files {
+		out = append(out, DiaryFileEntry{
+			Path:    file.Path,
+			Summary: "Checked diff for mock review patterns.",
+		})
+	}
+	return out
 }
 
 func toolStderr(buffer *bytes.Buffer) io.Writer {

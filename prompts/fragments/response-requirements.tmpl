@@ -13,5 +13,6 @@
 3. **Limit inline comments** to the most important issues (max {{ if .maxComments }}{{ .maxComments }}{{ else }}30{{ end }} comments)
 4. **Match line numbers to the diff** – comments on non-existent lines will fail
 5. **Use file-level comments** when line context is unavailable or for general feedback
-6. **Output ONLY the JSON object** – no other text before or after
+6. **Include `diary` when requested** – follow the diary requirements and keep entries concise
+7. **Output ONLY the JSON object** – no other text before or after
 {{- end -}}

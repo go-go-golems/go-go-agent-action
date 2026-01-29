@@ -78,8 +78,12 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 
 	modes := parseOutputModes(r.Inputs.OutputMode)
-	if result.SummaryMarkdown != "" && !modes["stdout"] {
-		fmt.Fprintln(r.Publisher.Stdout, result.SummaryMarkdown)
+	summary := result.SummaryMarkdown
+	if modes["diary"] && result.Diary != nil {
+		summary = appendDiaryMarkdown(summary, formatDiarySection(result.Diary, diaryRenderFull))
+	}
+	if summary != "" && !modes["stdout"] {
+		fmt.Fprintln(r.Publisher.Stdout, summary)
 	}
 
 	return nil

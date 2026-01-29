@@ -16,7 +16,8 @@ You MUST respond with a valid JSON object matching the ReviewResult schema:
   "review_decision": "APPROVE" | "COMMENT" | "REQUEST_CHANGES",
   "review_body": "...",
   "issue_comment": "...",
-  "comments": [...]
+  "comments": [...],
+  "diary": { ... }
 }
 ```
 
@@ -64,6 +65,24 @@ You MUST respond with a valid JSON object matching the ReviewResult schema:
    - **start_line** (optional): Start of multi-line range
    - **start_side** (optional): Side for range start
    - **subject_type** (optional): `"file"` for file-level, `"line"` for line-level
+
+6. **diary** (optional): Structured diary of your review process. Example:
+
+```json
+{
+  "summary": "Reviewed the changed files with a focus on deprecated patterns.",
+  "files_examined": [
+    {"path": "web/src/App.tsx", "summary": "Main component using hooks"}
+  ],
+  "what_i_looked_for": ["Deprecated React patterns", "Legacy Redux APIs"],
+  "what_i_found": [
+    {"type": "issue", "description": "Deprecated lifecycle method", "file": "web/src/App.tsx", "line": 42}
+  ],
+  "uncertainties": [
+    {"description": "React version not confirmed", "reason": "package.json not provided"}
+  ]
+}
+```
 
 ### Comment Placement Rules
 
