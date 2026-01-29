@@ -119,6 +119,7 @@ The action embeds reusable template fragments in `prompts/fragments/`. Use them 
 | `response-requirements` | Final requirements (valid JSON, limits, etc.) |
 | `pr-context-description` | Documentation of PRContext input fields |
 | `diary-instructions` | Optional diary guidance for ReviewResult output |
+| `diff-artifacts-location` | Optional note pointing to per-file diff artifacts |
 
 ### Fragment Usage
 
@@ -143,6 +144,9 @@ The action embeds reusable template fragments in `prompts/fragments/`. Use them 
 
 {{/* Optional diary instructions */}}
 {{ if .Vars.include_diary }}{{ template "diary-instructions" . }}{{ end }}
+
+{{/* Optional diff artifacts note */}}
+{{ if .Vars.diff_artifacts_path }}{{ template "diff-artifacts-location" . }}{{ end }}
 
 {{/* Or pass custom data to fragments */}}
 {{ template "response-requirements" dict "maxComments" 50 }}

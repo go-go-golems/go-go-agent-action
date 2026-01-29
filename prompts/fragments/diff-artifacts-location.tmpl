@@ -1,0 +1,16 @@
+{{- /*
+  diff-artifacts-location.tmpl - Optional note about per-file diff artifacts
+
+  Usage in prompt templates:
+    {{ template "diff-artifacts-location" . }}
+*/ -}}
+{{- define "diff-artifacts-location" -}}
+## Diff artifacts (optional)
+
+Per-file diffs are exported for on-demand inspection when prompt size is limited.
+
+Location: {{ .Vars.diff_artifacts_path | default "ttmp/.../various/diffs" }}
+
+Each file diff mirrors the repo path with a `.diff` suffix (e.g., `web/src/main.tsx.diff`).
+Only reference these artifacts if you need more context than the prompt includes.
+{{- end -}}
