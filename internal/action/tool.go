@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"strings"
@@ -15,115 +14,6 @@ import (
 // ReviewTool is any component capable of turning PR context into review output.
 type ReviewTool interface {
 	Review(ctx context.Context, pr *PRContext) (*ReviewResult, error)
-}
-
-// HTTPTool posts the PR context to an external service and expects ReviewResult JSON back.
-type HTTPTool struct {
-	Client  *http.Client
-	URL     string
-	Method  string
-	Headers map[string]string
-	Token   string
-}
-
-func (t *HTTPTool) Review(ctx context.Context, pr *PRContext) (*ReviewResult, error) {
-	if t.Client == nil {
-		t.Client = http.DefaultClient
-	}
-	method := strings.ToUpper(strings.TrimSpace(t.Method))
-	if method == "" {
-		method = http.MethodPost
-	}
-	payload, err := json.Marshal(pr)
-	if err != nil {
-		return nil, fmt.Errorf("marshal context: %w", err)
-	}
-	req, err := http.NewRequestWithContext(ctx, method, t.URL, bytes.NewReader(payload))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	for k, v := range t.Headers {
-		req.Header.Set(k, v)
-	}
-	if t.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+t.Token)
-	}
-
-	resp, err := t.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("tool HTTP %d: %s", resp.StatusCode, string(body))
-	}
-
-	var result ReviewResult
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("parse tool response: %w", err)
-	}
-	return &result, nil
-}
-
-// PromptHTTPTool posts rendered prompt text to an external service and expects ReviewResult JSON back.
-type PromptHTTPTool struct {
-	Client  *http.Client
-	URL     string
-	Method  string
-	Headers map[string]string
-	Token   string
-}
-
-func (t *PromptHTTPTool) Review(ctx context.Context, pr *PRContext) (*ReviewResult, error) {
-	if t.Client == nil {
-		t.Client = http.DefaultClient
-	}
-	method := strings.ToUpper(strings.TrimSpace(t.Method))
-	if method == "" {
-		method = http.MethodPost
-	}
-	if pr.PromptText == "" {
-		return nil, fmt.Errorf("prompt_text is empty")
-	}
-	req, err := http.NewRequestWithContext(ctx, method, t.URL, strings.NewReader(pr.PromptText))
-	if err != nil {
-		return nil, err
-	}
-	if _, ok := t.Headers["Content-Type"]; !ok {
-		req.Header.Set("Content-Type", "text/plain; charset=utf-8")
-	}
-	for k, v := range t.Headers {
-		req.Header.Set(k, v)
-	}
-	if t.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+t.Token)
-	}
-
-	resp, err := t.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("tool HTTP %d: %s", resp.StatusCode, string(body))
-	}
-
-	var result ReviewResult
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("parse tool response: %w", err)
-	}
-	return &result, nil
 }
 
 // CommandTool executes a local process, piping context JSON to stdin and reading ReviewResult JSON from stdout.
@@ -153,46 +43,6 @@ func (c *CommandTool) Review(ctx context.Context, pr *PRContext) (*ReviewResult,
 	}
 
 	cmd.Stdin = bytes.NewReader(payload)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = toolStderr(&stderr)
-
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("tool command failed: %v\nstderr: %s", err, stderr.String())
-	}
-
-	var result ReviewResult
-	if err := json.Unmarshal(stdout.Bytes(), &result); err != nil {
-		return nil, fmt.Errorf("parse tool stdout: %v\nstdout: %s", err, stdout.String())
-	}
-	return &result, nil
-}
-
-// PromptCommandTool executes a local process, piping rendered prompt text to stdin.
-type PromptCommandTool struct {
-	Command string
-	Args    []string
-	Dir     string
-	Runner  func(ctx context.Context, name string, args ...string) *exec.Cmd
-}
-
-func (c *PromptCommandTool) Review(ctx context.Context, pr *PRContext) (*ReviewResult, error) {
-	if c.Command == "" {
-		return nil, fmt.Errorf("tool command is required")
-	}
-	if pr.PromptText == "" {
-		return nil, fmt.Errorf("prompt_text is empty")
-	}
-	run := c.Runner
-	if run == nil {
-		run = exec.CommandContext
-	}
-	cmd := run(ctx, c.Command, c.Args...)
-	if c.Dir != "" {
-		cmd.Dir = c.Dir
-	}
-
-	cmd.Stdin = strings.NewReader(pr.PromptText)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = toolStderr(&stderr)

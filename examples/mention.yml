@@ -19,4 +19,5 @@ jobs:
         uses: ./. # replace with published action
         with:
           tool_mode: mock
+          trigger_phrase: "@agent"
           output_mode: review+summary

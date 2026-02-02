@@ -28,14 +28,9 @@ type Inputs struct {
 	IncludeDiary           bool
 
 	ToolMode      string
-	ToolURL       string
-	ToolMethod    string
-	ToolHeaders   map[string]string
-	ToolToken     string
 	ToolCmd       string
 	ToolArgs      []string
 	WorkingDir    string
-	ToolInputMode string
 
 	OutputMode     string
 	MaxComments    int
@@ -48,18 +43,16 @@ type Inputs struct {
 // canonical Inputs struct. The lookup function is passed so tests can stub env.
 func ParseInputs(args []string, lookup func(string) string) (*Inputs, error) {
 	in := &Inputs{
-		ToolHeaders:        map[string]string{},
 		PromptTemplateVars: map[string]any{},
 	}
 	fs := flag.NewFlagSet("agent-action", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 
-	var headersJSON string
 	var toolArgsJSON string
 	var repoGlobsRaw string
 	var templateVarsJSON string
 
-	fs.StringVar(&in.TriggerPhrase, "trigger_phrase", envOrDefault(lookup, "INPUT_TRIGGER_PHRASE", "@agent"), "")
+	fs.StringVar(&in.TriggerPhrase, "trigger_phrase", envOrDefault(lookup, "INPUT_TRIGGER_PHRASE", ""), "")
 	fs.StringVar(&in.LabelTrigger, "label_trigger", lookup("INPUT_LABEL_TRIGGER"), "")
 	fs.StringVar(&in.AssigneeTrigger, "assignee_trigger", lookup("INPUT_ASSIGNEE_TRIGGER"), "")
 	fs.IntVar(&in.PRNumberOverride, "pr_number", envInt(lookup, "INPUT_PR_NUMBER", 0), "")
@@ -78,14 +71,9 @@ func ParseInputs(args []string, lookup func(string) string) (*Inputs, error) {
 	fs.BoolVar(&in.IncludeDiary, "include_diary", envBool(lookup, "INPUT_INCLUDE_DIARY", false), "")
 
 	fs.StringVar(&in.ToolMode, "tool_mode", envOrDefault(lookup, "INPUT_TOOL_MODE", "mock"), "")
-	fs.StringVar(&in.ToolURL, "tool_url", lookup("INPUT_TOOL_URL"), "")
-	fs.StringVar(&in.ToolMethod, "tool_method", envOrDefault(lookup, "INPUT_TOOL_METHOD", "POST"), "")
-	fs.StringVar(&headersJSON, "tool_headers_json", envOrDefault(lookup, "INPUT_TOOL_HEADERS_JSON", "{}"), "")
-	fs.StringVar(&in.ToolToken, "tool_token", lookup("INPUT_TOOL_TOKEN"), "")
 	fs.StringVar(&in.ToolCmd, "tool_cmd", lookup("INPUT_TOOL_CMD"), "")
 	fs.StringVar(&toolArgsJSON, "tool_args_json", envOrDefault(lookup, "INPUT_TOOL_ARGS_JSON", "[]"), "")
 	fs.StringVar(&in.WorkingDir, "working_directory", lookup("INPUT_WORKING_DIRECTORY"), "")
-	fs.StringVar(&in.ToolInputMode, "tool_input_mode", envOrDefault(lookup, "INPUT_TOOL_INPUT_MODE", "pr_context"), "")
 
 	fs.StringVar(&in.OutputMode, "output_mode", envOrDefault(lookup, "INPUT_OUTPUT_MODE", "review+summary"), "")
 	fs.IntVar(&in.MaxComments, "max_comments", envInt(lookup, "INPUT_MAX_COMMENTS", 30), "")
@@ -106,11 +94,6 @@ func ParseInputs(args []string, lookup func(string) string) (*Inputs, error) {
 		}
 	}
 
-	if headersJSON != "" {
-		if err := json.Unmarshal([]byte(headersJSON), &in.ToolHeaders); err != nil {
-			return nil, fmt.Errorf("parse tool_headers_json: %w", err)
-		}
-	}
 	if toolArgsJSON != "" {
 		if err := json.Unmarshal([]byte(toolArgsJSON), &in.ToolArgs); err != nil {
 			return nil, fmt.Errorf("parse tool_args_json: %w", err)

@@ -2,349 +2,214 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "summary_markdown",
-    "review_decision",
-    "review_body",
-    "issue_comment",
-    "comments",
-    "diary"
-  ],
   "properties": {
     "summary_markdown": {
-      "type": [
-        "string",
-        "null"
-      ],
+      "type": "string",
       "description": "Markdown summary for GitHub Actions job summary"
     },
     "review_decision": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "enum": [
-        "APPROVE",
-        "COMMENT",
-        "REQUEST_CHANGES",
-        null
-      ],
-      "description": "GitHub review decision"
+      "type": "string",
+      "description": "GitHub review decision (APPROVE|COMMENT|REQUEST_CHANGES)"
     },
     "review_body": {
-      "type": [
-        "string",
-        "null"
-      ],
+      "type": "string",
       "description": "Main body text of the PR review"
     },
     "issue_comment": {
-      "type": [
-        "string",
-        "null"
-      ],
+      "type": "string",
       "description": "Optional additional timeline comment"
     },
     "comments": {
-      "type": [
-        "array",
-        "null"
-      ],
+      "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "path",
-          "body",
-          "line",
-          "side",
-          "start_line",
-          "start_side",
-          "subject_type"
-        ],
         "properties": {
           "path": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           },
           "body": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           },
           "line": {
-            "type": [
-              "integer",
-              "null"
-            ]
+            "type": "integer",
+            "minimum": 1
           },
           "side": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "enum": [
               "LEFT",
-              "RIGHT",
-              null
+              "RIGHT"
             ]
           },
           "start_line": {
-            "type": [
-              "integer",
-              "null"
-            ]
+            "type": "integer",
+            "minimum": 1
           },
           "start_side": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "enum": [
               "LEFT",
-              "RIGHT",
-              null
+              "RIGHT"
             ]
           },
           "subject_type": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "enum": [
               "file",
-              "line",
-              null
+              "line"
             ]
           }
-        }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "path",
+              "body",
+              "subject_type"
+            ],
+            "properties": {
+              "subject_type": {
+                "const": "file"
+              }
+            }
+          },
+          {
+            "required": [
+              "path",
+              "body",
+              "line",
+              "side"
+            ],
+            "properties": {
+              "subject_type": {
+                "const": "line"
+              }
+            }
+          },
+          {
+            "required": [
+              "path",
+              "body",
+              "line",
+              "side"
+            ],
+            "not": {
+              "required": [
+                "subject_type"
+              ]
+            }
+          }
+        ]
       }
     },
     "diary": {
-      "type": [
-        "object",
-        "null"
-      ],
+      "type": "object",
       "additionalProperties": false,
-      "required": [
-        "summary",
-        "files_examined",
-        "what_i_looked_for",
-        "what_i_found",
-        "uncertainties",
-        "what_i_learned",
-        "tricky_to_analyze",
-        "second_pair_of_eyes",
-        "future_work",
-        "review_instructions",
-        "technical_details"
-      ],
       "properties": {
         "summary": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "files_examined": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "path",
-              "summary",
-              "patterns_checked"
-            ],
             "properties": {
               "path": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": "string"
               },
               "summary": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": "string"
               },
               "patterns_checked": {
-                "type": [
-                  "array",
-                  "null"
-                ],
+                "type": "array",
                 "items": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
+                  "type": "string"
                 }
               }
             }
           }
         },
         "what_i_looked_for": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": "array",
           "items": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           }
         },
         "what_i_found": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "type",
-              "description",
-              "file",
-              "line"
-            ],
             "properties": {
               "type": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": "string"
               },
               "description": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": "string"
               },
               "file": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": "string"
               },
               "line": {
-                "type": [
-                  "integer",
-                  "null"
-                ]
+                "type": "integer",
+                "minimum": 1
               }
             }
           }
         },
         "uncertainties": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "description",
-              "reason",
-              "file",
-              "line"
-            ],
             "properties": {
               "description": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": "string"
               },
               "reason": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": "string"
               },
               "file": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": "string"
               },
               "line": {
-                "type": [
-                  "integer",
-                  "null"
-                ]
+                "type": "integer",
+                "minimum": 1
               }
             }
           }
         },
         "what_i_learned": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": "array",
           "items": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           }
         },
         "tricky_to_analyze": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": "array",
           "items": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           }
         },
         "second_pair_of_eyes": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": "array",
           "items": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           }
         },
         "future_work": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": "array",
           "items": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           }
         },
         "review_instructions": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "technical_details": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         }
       }
     }

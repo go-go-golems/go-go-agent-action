@@ -14,7 +14,7 @@ SectionType: GeneralTopic
 
 # Integrating Your Custom Reviewer with the Go Agent Action
 
-This guide focuses on using the published `go-go-golems/go-go-agent-action` without modifying its source. You will learn how to build a reviewer binary or service, consume the full pull-request context, return multiple inline comments, and run the action from a GitHub workflow that supports both pull-request events and `@agent` mentions.
+This guide focuses on using the published `go-go-golems/go-go-agent-action` without modifying its source. You will learn how to build a reviewer binary, consume the full pull-request context, return multiple inline comments, and run the action from a GitHub workflow that supports both pull-request events and `@agent` mentions.
 
 ## Prerequisites
 
@@ -100,23 +100,7 @@ Key fields:
 
 ## Step 2 – Implement your reviewer
 
-Choose whether your reviewer runs as an HTTP service or a CLI binary. Both options receive the same `PRContext` JSON.
-
-### HTTP reviewer
-
-Expose a POST endpoint and configure the workflow accordingly:
-
-```yaml
-with:
-  tool_mode: http
-  tool_url: https://reviewer.internal/api/review
-  tool_headers_json: '{"X-Auth":"secret"}'
-  include_patch: true
-  output_mode: review+summary
-  github_token: ${{ secrets.GITHUB_TOKEN }}
-```
-
-The action sends the JSON payload to `tool_url` and expects a `ReviewResult` response. Use this when your reviewer runs outside GitHub (e.g., Kubernetes, serverless).
+Choose a CLI reviewer that reads the `PRContext` JSON from stdin and prints a `ReviewResult` JSON to stdout.
 
 ### CLI reviewer with PR-defined commands
 

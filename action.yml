@@ -1,14 +1,14 @@
 name: "Agent Code Action (Go)"
-description: "Go-based GitHub Action that bundles PR context and routes it to your own tool (HTTP or CLI), then posts the result as a PR review or comment."
+description: "Go-based GitHub Action that bundles PR context and routes it to your own tool (mock or CLI), then posts the result as a PR review or comment."
 branding:
   icon: "zap"
   color: "blue"
 
 inputs:
   trigger_phrase:
-    description: "Trigger phrase to look for in comments or PR body (e.g. @agent)"
+    description: "Trigger phrase to look for in comments or PR body (set to empty for always-on)"
     required: false
-    default: "@agent"
+    default: ""
   label_trigger:
     description: "Optional label that triggers the action on PRs"
     required: false
@@ -57,10 +57,6 @@ inputs:
     description: "Ask the tool to return a structured diary in the ReviewResult"
     required: false
     default: "false"
-  tool_input_mode:
-    description: "Tool input payload: pr_context | prompt_text | both"
-    required: false
-    default: "pr_context"
   max_file_bytes:
     description: "Max bytes per file to include when include_file_contents=true"
     required: false
@@ -71,25 +67,9 @@ inputs:
     default: "200"
 
   tool_mode:
-    description: "How to call your tool: mock | http | cmd"
+    description: "How to call your tool: mock | cmd"
     required: false
     default: "mock"
-  tool_url:
-    description: "When tool_mode=http, the URL to POST the JSON context to"
-    required: false
-    default: ""
-  tool_method:
-    description: "HTTP method to use (POST|PUT) when tool_mode=http"
-    required: false
-    default: "POST"
-  tool_headers_json:
-    description: "Optional JSON object of headers to send with HTTP call"
-    required: false
-    default: "{}"
-  tool_token:
-    description: "Optional bearer token added as Authorization: Bearer ... for HTTP mode"
-    required: false
-    default: ""
 
   tool_cmd:
     description: "When tool_mode=cmd, the command (binary) to execute"
@@ -162,22 +142,12 @@ runs:
     - "${{ inputs.max_changed_files }}"
     - "--tool_mode"
     - "${{ inputs.tool_mode }}"
-    - "--tool_url"
-    - "${{ inputs.tool_url }}"
-    - "--tool_method"
-    - "${{ inputs.tool_method }}"
-    - "--tool_headers_json"
-    - "${{ inputs.tool_headers_json }}"
-    - "--tool_token"
-    - "${{ inputs.tool_token }}"
     - "--tool_cmd"
     - "${{ inputs.tool_cmd }}"
     - "--tool_args_json"
     - "${{ inputs.tool_args_json }}"
     - "--working_directory"
     - "${{ inputs.working_directory }}"
-    - "--tool_input_mode"
-    - "${{ inputs.tool_input_mode }}"
     - "--output_mode"
     - "${{ inputs.output_mode }}"
     - "--max_comments"

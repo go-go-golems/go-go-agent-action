@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 )
 
 type githubService interface {
@@ -64,10 +63,6 @@ func (r *Runner) Run(ctx context.Context) error {
 		prc.PromptMeta = meta
 	}
 
-	if strings.EqualFold(r.Inputs.ToolInputMode, "prompt_text") && prc.PromptText == "" {
-		return fmt.Errorf("tool_input_mode=prompt_text requires a rendered prompt (set prompt_template_path)")
-	}
-
 	result, err := r.Tool.Review(ctx, prc)
 	if err != nil {
 		return fmt.Errorf("review tool: %w", err)
@@ -75,15 +70,6 @@ func (r *Runner) Run(ctx context.Context) error {
 
 	if err := r.Publisher.Publish(ctx, prc, result); err != nil {
 		return err
-	}
-
-	modes := parseOutputModes(r.Inputs.OutputMode)
-	summary := result.SummaryMarkdown
-	if modes["diary"] && result.Diary != nil {
-		summary = appendDiaryMarkdown(summary, formatDiarySection(result.Diary, diaryRenderFull))
-	}
-	if summary != "" && !modes["stdout"] {
-		fmt.Fprintln(r.Publisher.Stdout, summary)
 	}
 
 	return nil

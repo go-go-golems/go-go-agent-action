@@ -1,6 +1,8 @@
-.PHONY: all test build lint lintmax docker-lint gosec govulncheck tag-major tag-minor tag-patch
+.PHONY: all test build lint lintmax docker-lint gosec govulncheck tag-major tag-minor tag-patch release version
 
 all: test build
+
+VERSION ?= $(shell svu current)
 
 docker-lint:
 	docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint:v2.1.0 golangci-lint run -v
@@ -33,3 +35,9 @@ tag-minor:
 
 tag-patch:
 	git tag $(shell svu patch)
+
+release:
+	git push origin --tags
+
+version:
+	@echo $(VERSION)

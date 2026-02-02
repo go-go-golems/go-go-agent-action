@@ -51,11 +51,12 @@ The go-go-agent-action includes a powerful prompt templating system that lets yo
 ```yaml
 - uses: go-go-golems/go-go-agent-action@v1
   with:
-    tool_mode: http
-    tool_url: https://your-llm-service/review
+    tool_mode: cmd
+    tool_cmd: ./scripts/openai-review-tool.sh
     prompt_template_path: .github/prompts/review.tmpl
-    tool_input_mode: prompt_text
 ```
+
+The CLI tool always receives a `PRContext` JSON payload on stdin. When `prompt_template_path` is set, the rendered prompt is included as `prompt_text` in that JSON payload.
 
 ## Template Data
 
@@ -255,7 +256,6 @@ In addition to sprig, these custom functions are available:
 | `prompt_template_engine` | Template engine | `go-template` |
 | `prompt_template_vars_json` | JSON object of custom variables | `{}` |
 | `prompt_template_max_bytes` | Max bytes to read from template | `200000` |
-| `tool_input_mode` | What to send: `pr_context`, `prompt_text`, or `both` | `pr_context` |
 
 ## Complete Example
 
@@ -332,7 +332,6 @@ Configure with custom variables:
         "maxComments": 20,
         "focus": "security vulnerabilities and API design"
       }
-    tool_input_mode: prompt_text
 ```
 
 ## ReviewResult Output Format
@@ -361,5 +360,5 @@ Your review tool must return JSON matching the `ReviewResult` schema. See the em
 1. **Start with fragments** – Use the embedded fragments to ensure correct output format
 2. **Test locally** – Use `tool_mode: mock` to validate template rendering
 3. **Keep prompts focused** – Large prompts may hit token limits
-4. **Use `tool_input_mode: prompt_text`** – When sending rendered prompts to LLMs
+4. **Use `prompt_template_path`** – So tools can read `.prompt_text` from the JSON input
 5. **Pass custom vars** – Use `prompt_template_vars_json` for configurable behavior
