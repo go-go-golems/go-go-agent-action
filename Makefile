@@ -3,7 +3,7 @@
 all: test build
 
 docker-lint:
-	docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint:v2.1.0 golangci-lint run -v
+	docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint:v2.6.2 golangci-lint run -v
 
 lint:
 	golangci-lint run -v
