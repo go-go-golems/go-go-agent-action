@@ -1,0 +1,3 @@
+package gogoagentaction
+
+//go:generate go tool logcopter-gen -area-prefix go-go-golems.go-go-agent-action -strip-prefix github.com/go-go-golems/go-go-agent-action ./internal/... ./cmd/...
